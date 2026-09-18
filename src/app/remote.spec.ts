@@ -152,13 +152,13 @@ describe('remote session lifecycle', () => {
     old.onclose?.();
     expect(current.readyState).toBe(1);
   });
-  it('falls back after three seconds and resets retry delay after a successful session', async () => {
+  it('bounds stalled negotiation and resets retry delay after a successful session', async () => {
     const remote = TestBed.inject(Remote);
     const status = vi.fn();
     await remote.connect('device', 'Terminal', status, vi.fn(), vi.fn());
     const socket = FakeSocket.instances[0];
     await socket.message('session.accept');
-    await vi.advanceTimersByTimeAsync(2999);
+    await vi.advanceTimersByTimeAsync(24999);
     expect(socket.sent.map((x) => x.type)).not.toContain('relay.start');
     await vi.advanceTimersByTimeAsync(1);
     expect(socket.sent.map((x) => x.type)).toContain('relay.start');
@@ -174,6 +174,24 @@ describe('remote session lifecycle', () => {
     third.onclose?.();
     await vi.advanceTimersByTimeAsync(500);
     expect(FakeSocket.instances).toHaveLength(4);
+  });
+  it('accepts a late trickled answer without prematurely destroying P2P', async () => {
+    const remote = TestBed.inject(Remote);
+    const status = vi.fn();
+    await remote.connect('device', 'Terminal', status, vi.fn(), vi.fn());
+    const socket = FakeSocket.instances[0];
+    const peer = FakePeer.instances[0];
+    await socket.message('session.accept', { trickleIce: true });
+    await vi.advanceTimersByTimeAsync(6000);
+    expect(peer.connectionState).not.toBe('closed');
+    await socket.message('webrtc.iceCandidate', { candidate: 'candidate:1 typ host' });
+    await socket.message('webrtc.answer', { sdp: 'late-answer' });
+    expect(peer.addIceCandidate).toHaveBeenCalled();
+    peer.channels[0].onopen?.();
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(status).toHaveBeenLastCalledWith('connected');
+    expect(socket.sent.map((x) => x.type)).not.toContain('relay.start');
+    expect(peer.connectionState).not.toBe('closed');
   });
   it('keeps the authorized socket usable when agent ICE negotiation fails', async () => {
     const remote = TestBed.inject(Remote);

@@ -492,7 +492,9 @@ export class Remote {
             }
             this.connectionPhase.set('connectionP2p');
             clearTimeout(this.timer);
-            this.timer = setTimeout(startRelay, 3000);
+            // This is a failure deadline, not a target connection duration.
+            // Cold agent media startup and trickled answers can exceed three seconds.
+            this.timer = setTimeout(startRelay, 25000);
             try {
               await peer.setLocalDescription(await peer.createOffer());
               if (!trickleIce && peer.iceGatheringState !== 'complete')
