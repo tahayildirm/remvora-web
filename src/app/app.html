@@ -1268,21 +1268,6 @@
           <button (click)="mobileKey(key)">{{ keyLabel(key) }}</button>
         }
       </div>
-      <div class="mobile-text-entry">
-        <input
-          id="mobile-remote-text"
-          [attr.aria-label]="t('remoteText')"
-          [(ngModel)]="mobileText"
-          autocomplete="off"
-          autocapitalize="off"
-          spellcheck="false"
-          (keydown.enter)="sendMobileText(); $event.preventDefault()"
-        />
-        <button (click)="sendMobileText()">{{ t('mobileSend') }}</button>
-      </div>
-      @if (remoteKind === 'Desktop') {
-        <small>{{ t('desktopTextHint') }}</small>
-      }
     </div>
   }
 </ng-template>

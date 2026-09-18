@@ -1,5 +1,5 @@
 import { loadView, saveView } from './view-preferences';
-import { SurfaceGestures } from './surface-gestures';
+import { SurfaceGestures, imagePoint } from './surface-gestures';
 import { InputMode, TouchPointer, touchLayout } from './touch-pointer';
 import { COUNTRY_CODES, TURKEY_PROVINCES } from './location-data';
 import { DEFAULT_QUALITY, VideoQuality, loadQuality, saveQuality } from './video-quality';
@@ -750,6 +750,7 @@ export class App implements OnInit, OnDestroy {
     this.updateInputLayout();
   }
   cancelTouch() {
+    this.remote.cancelTextFocus();
     this.gestures.cancel();
   }
   touchPointer(event: PointerEvent, type: string) {
@@ -766,13 +767,21 @@ export class App implements OnInit, OnDestroy {
       imageHeight: video.videoHeight,
     };
     if (type === 'down') {
+      this.remote.cancelTextFocus();
       target.setPointerCapture(event.pointerId);
       this.gestures.down(event.pointerId, p);
     }
     if (type === 'move') this.gestures.move(event.pointerId, p, box);
     if (type === 'up') {
-      this.gestures.up(event.pointerId, p, box);
+      const tapped = this.gestures.up(event.pointerId, p, box);
       if (target.hasPointerCapture(event.pointerId)) target.releasePointerCapture(event.pointerId);
+      if (tapped) {
+        const point = imagePoint(p, box, { zoom: this.viewZoom(), ...this.viewPan() });
+        if (point) {
+          if (this.remote.isTextField(point.x, point.y)) this.openMobileKeyboard();
+          else this.remote.requestTextFocus(point.x, point.y, () => this.openMobileKeyboard());
+        }
+      }
     }
   }
   keyLabel(key: string) {
@@ -828,11 +837,11 @@ export class App implements OnInit, OnDestroy {
     this.keyboardVisible.update((value) => !value);
     if (this.keyboardVisible()) {
       this.changes.detectChanges();
-      document.getElementById('mobile-remote-text')?.focus({ preventScroll: true });
+      this.openMobileKeyboard();
     }
   }
   openMobileKeyboard() {
-    // Explicit keyboard action only; pointing at the remote video never focuses this.
+    // Focus the invisible native input directly during a keyboard action or confirmed text-field tap.
     if (this.remoteKind === 'Terminal') {
       this.terminal?.focus();
       return;
@@ -979,6 +988,7 @@ export class App implements OnInit, OnDestroy {
       this.resizeObserver = new ResizeObserver(this.fitTerminal);
       this.resizeObserver.observe(host);
     }
+    this.remote.textDetectionEnabled = this.touchUi();
     await this.run(() =>
       this.remote.connect(
         device.id,

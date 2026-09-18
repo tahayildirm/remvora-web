@@ -49,6 +49,7 @@ class FakePeer {
     this.channels.push(channel);
     return channel;
   }
+  addTransceiver() {}
   createOffer() {
     return Promise.resolve({ type: 'offer', sdp: 'test' });
   }
@@ -119,6 +120,58 @@ describe('remote session lifecycle', () => {
     TestBed.inject(Remote).close();
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+  it('uses only fresh validated text regions and clears them on disconnect', async () => {
+    const remote = TestBed.inject(Remote);
+    remote.textDetectionEnabled = true;
+    await remote.connect('device', 'Desktop', vi.fn(), vi.fn(), vi.fn());
+    const channel = FakePeer.instances[0].channels[0];
+    channel.onopen?.();
+    channel.onmessage?.(
+      new MessageEvent('message', {
+        data: JSON.stringify({
+          type: 'text.regions',
+          nonce: 1,
+          bounds: [
+            [0.4, 0.4, 0.6, 0.6],
+            [-1, 0, 1, 1],
+          ],
+        }),
+      }),
+    );
+    expect(remote.isTextField(0.5, 0.5)).toBe(true);
+    expect(remote.isTextField(0.1, 0.1)).toBe(false);
+    await vi.advanceTimersByTimeAsync(1501);
+    expect(remote.isTextField(0.5, 0.5)).toBe(false);
+    remote.close();
+    expect(remote.isTextField(0.5, 0.5)).toBe(false);
+  });
+  it('opens typing only for a fresh matching accessibility rectangle', async () => {
+    const remote = TestBed.inject(Remote);
+    await remote.connect('device', 'Terminal', vi.fn(), vi.fn(), vi.fn());
+    const channel = FakePeer.instances[0].channels[0];
+    const ready = vi.fn();
+    const reply = (nonce: number, bounds: unknown) =>
+      channel.onmessage?.(
+        new MessageEvent('message', {
+          data: JSON.stringify({ type: 'text.focus', nonce, bounds }),
+        }),
+      );
+    remote.requestTextFocus(0.5, 0.5, ready);
+    reply(1, null);
+    expect(ready).not.toHaveBeenCalled();
+    remote.requestTextFocus(0.5, 0.5, ready);
+    reply(2, [0, 0, 0.2, 0.2]);
+    expect(ready).not.toHaveBeenCalled();
+    remote.requestTextFocus(0.5, 0.5, ready);
+    reply(2, [0, 0, 1, 1]);
+    expect(ready).not.toHaveBeenCalled();
+    reply(3, [0.4, 0.4, 0.6, 0.6]);
+    expect(ready).toHaveBeenCalledOnce();
+    remote.requestTextFocus(0.5, 0.5, ready);
+    remote.cancelTextFocus();
+    reply(4, [0, 0, 1, 1]);
+    expect(ready).toHaveBeenCalledOnce();
   });
   it('falls back within the same authorized session and ignores events from old sockets', async () => {
     const remote = TestBed.inject(Remote);

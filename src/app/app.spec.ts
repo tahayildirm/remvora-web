@@ -207,7 +207,13 @@ describe('mobile remote tools', () => {
     document.body.appendChild(video);
     const openMobileKeyboard = vi.fn();
     const up = vi.fn(() => true);
-    const app = { gestures: { up }, openMobileKeyboard } as unknown as App;
+    const app = {
+      gestures: { up },
+      openMobileKeyboard,
+      viewZoom: () => 1,
+      viewPan: () => ({ x: 0, y: 0 }),
+      remote: { requestTextFocus: vi.fn(), isTextField: () => false },
+    } as unknown as App;
     App.prototype.touchPointer.call(
       app,
       {

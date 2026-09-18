@@ -151,6 +151,48 @@ export class Remote {
   private clipboardPending = false;
   private clipboardTimer?: ReturnType<typeof setTimeout>;
   clipboardReceived?: (text: string) => void;
+  textDetectionEnabled = false;
+  private regionsTimer?: ReturnType<typeof setInterval>;
+  private regionsNonce = 0;
+  private regionsRequestedAt = 0;
+  private textRegions: number[][] = [];
+  private regionsReceivedAt = -Infinity;
+  isTextField(x: number, y: number) {
+    return (
+      performance.now() - this.regionsReceivedAt < 1500 &&
+      this.textRegions.some((b) => x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3])
+    );
+  }
+  private startTextRegions() {
+    clearInterval(this.regionsTimer);
+    if (!this.textDetectionEnabled) return;
+    const poll = () => {
+      this.regionsRequestedAt = performance.now();
+      this.control({ type: 'text.regions', nonce: ++this.regionsNonce });
+    };
+    poll();
+    this.regionsTimer = setInterval(poll, 1000);
+  }
+  private validTextBounds(b: unknown): b is number[] {
+    return (
+      Array.isArray(b) &&
+      b.length === 4 &&
+      b.every((v) => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1) &&
+      b[0] < b[2] &&
+      b[1] < b[3]
+    );
+  }
+  private focusNonce = 0;
+  private pendingFocus?: { nonce: number; x: number; y: number; at: number; ready: () => void };
+  requestTextFocus(x: number, y: number, ready: () => void) {
+    const nonce = ++this.focusNonce;
+    this.pendingFocus = { nonce, x, y, at: performance.now(), ready };
+    this.control({ type: 'text.focus', nonce });
+  }
+  cancelTextFocus() {
+    this.pendingFocus = undefined;
+  }
+
   displaysReceived?: (displays: { id: number; name: string }[]) => void;
   private report?: (code: string) => void;
   constructor(private api: Api) {}
@@ -274,6 +316,43 @@ export class Remote {
           try {
             const message = JSON.parse(e.data);
             if (
+              message.type === 'text.regions' &&
+              this.regionsNonce > 0 &&
+              this.textDetectionEnabled &&
+              message.nonce === this.regionsNonce &&
+              performance.now() - this.regionsRequestedAt < 2500
+            ) {
+              this.textRegions = Array.isArray(message.bounds)
+                ? message.bounds.slice(0, 32).filter((b: unknown) => this.validTextBounds(b))
+                : [];
+              this.regionsReceivedAt = performance.now();
+            }
+            if (message.type === 'text.focus') {
+              const pending = this.pendingFocus;
+              if (pending && message.nonce === pending.nonce) {
+                this.pendingFocus = undefined;
+                const b = message.bounds;
+                if (
+                  performance.now() - pending.at < 3000 &&
+                  Array.isArray(b) &&
+                  b.length === 4 &&
+                  b.every(
+                    (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1,
+                  ) &&
+                  b[0] < b[2] &&
+                  b[1] < b[3] &&
+                  pending.x >= b[0] &&
+                  pending.x <= b[2] &&
+                  pending.y >= b[1] &&
+                  pending.y <= b[3]
+                ) {
+                  this.trace('Text focus confirmed at tapped position');
+                  pending.ready();
+                }
+              }
+            }
+
+            if (
               message.type === 'capabilities' &&
               message.videoSettings === true &&
               kind === 'Desktop'
@@ -333,6 +412,7 @@ export class Remote {
       };
       this.channel.onopen = () => {
         if (this.peer !== peer) return;
+        if (kind === 'Desktop') this.startTextRegions();
         if (kind === 'Terminal') {
           clearTimeout(this.timer);
           this.connectionPhase.set('connectionP2pReady');
@@ -397,6 +477,8 @@ export class Remote {
           `Fallback trigger: peer=${peer.connectionState}, ice=${peer.iceConnectionState}, gathering=${peer.iceGatheringState}`,
         );
         clearInterval(this.iceTimer);
+        clearInterval(this.regionsTimer);
+        this.textRegions = [];
         relay = true;
         this.connectionPhase.set(
           mode === 'relay' ? 'connectionRelayConnecting' : 'connectionFallback',
@@ -466,6 +548,7 @@ export class Remote {
             return;
           }
           if (message.type === 'relay.ready' && relay) {
+            if (kind === 'Desktop') this.startTextRegions();
             this.relayFiles?.onopen?.(new Event('open'));
             if (kind === 'Terminal') {
               clearTimeout(this.timer);
@@ -636,6 +719,10 @@ export class Remote {
     this.disconnect();
   }
   private disconnect() {
+    this.cancelTextFocus();
+    clearInterval(this.regionsTimer);
+    this.textRegions = [];
+    this.regionsReceivedAt = -Infinity;
     clearInterval(this.iceTimer);
     this.connectionPhase.set('connectionOffline');
     this.generation++;
