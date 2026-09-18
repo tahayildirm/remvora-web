@@ -199,14 +199,14 @@ describe('mobile remote tools', () => {
     App.prototype.mobileKey.call(app, 'd');
     expect(new TextDecoder().decode(input.mock.calls[2][0])).toBe('\x1bd');
   });
-  it('does not open a keyboard when tapping the remote desktop', () => {
+  it.each([true, false])('opens the keyboard only for a direct tap (%s)', (tapped) => {
     const video = document.createElement('video');
     video.id = 'desktop-video';
     Object.defineProperty(video, 'videoWidth', { value: 800 });
     Object.defineProperty(video, 'videoHeight', { value: 600 });
     document.body.appendChild(video);
     const openMobileKeyboard = vi.fn();
-    const up = vi.fn(() => true);
+    const up = vi.fn(() => tapped);
     const app = {
       gestures: { up },
       openMobileKeyboard,
@@ -229,7 +229,7 @@ describe('mobile remote tools', () => {
       'up',
     );
     expect(up).toHaveBeenCalled();
-    expect(openMobileKeyboard).not.toHaveBeenCalled();
+    expect(openMobileKeyboard).toHaveBeenCalledTimes(tapped ? 1 : 0);
     video.remove();
   });
   it('focuses the terminal directly from the keyboard button', () => {

@@ -1,5 +1,5 @@
 import { loadView, saveView } from './view-preferences';
-import { SurfaceGestures, imagePoint } from './surface-gestures';
+import { SurfaceGestures } from './surface-gestures';
 import { InputMode, TouchPointer, touchLayout } from './touch-pointer';
 import { COUNTRY_CODES, TURKEY_PROVINCES } from './location-data';
 import { DEFAULT_QUALITY, VideoQuality, loadQuality, saveQuality } from './video-quality';
@@ -775,13 +775,8 @@ export class App implements OnInit, OnDestroy {
     if (type === 'up') {
       const tapped = this.gestures.up(event.pointerId, p, box);
       if (target.hasPointerCapture(event.pointerId)) target.releasePointerCapture(event.pointerId);
-      if (tapped) {
-        const point = imagePoint(p, box, { zoom: this.viewZoom(), ...this.viewPan() });
-        if (point) {
-          if (this.remote.isTextField(point.x, point.y)) this.openMobileKeyboard();
-          else this.remote.requestTextFocus(point.x, point.y, () => this.openMobileKeyboard());
-        }
-      }
+      // Open synchronously in the tap gesture; do not wait for remote metadata.
+      if (tapped) this.openMobileKeyboard();
     }
   }
   keyLabel(key: string) {
@@ -989,7 +984,7 @@ export class App implements OnInit, OnDestroy {
       this.resizeObserver = new ResizeObserver(this.fitTerminal);
       this.resizeObserver.observe(host);
     }
-    this.remote.textDetectionEnabled = this.touchUi();
+    this.remote.textDetectionEnabled = false;
     await this.run(() =>
       this.remote.connect(
         device.id,
