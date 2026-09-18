@@ -86,3 +86,8 @@ WSS relay uses TLS per hop; the server can access payloads. A self-hosted operat
 - Old page: close/reopen or refresh; compare the deployed hashed bundle. Keep the prior index/hashed files for rollback.
 
 Update by building a compatible version, backing up the existing static entry/config, deploying static files and testing login plus a real session. API/agent upgrades are separate. Read [status](STATUS.md) for acceptance gaps, [release checklist](PUBLIC_RELEASE.md), SECURITY and CONTRIBUTING. Selected Raspberry/macOS flows were tested; full Windows, physical mobile IME, load/soak, independent security and signed release gates remain.
+
+
+### Saved view preferences
+
+Terminal tools include an 8–24 px text-size selector (default 14 px). Changing it refits the terminal and updates the remote rows/columns. Text size, audio mute and volume persist in this browser’s local storage across reconnects and page reloads. They are not synced between browsers; clearing site data resets them. Browser autoplay policy may still require a tap to start sound.

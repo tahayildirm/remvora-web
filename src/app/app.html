@@ -798,6 +798,17 @@
                 </button>
               </div>
               <div id="terminal-tools" class="terminal-tools" [hidden]="!desktopToolsVisible()">
+                <label
+                  >{{ t('terminalFontSize') }}
+                  <select
+                    [ngModel]="terminalFontSize"
+                    (ngModelChange)="setTerminalFontSize($event)"
+                  >
+                    @for (size of [8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 20, 22, 24]; track size) {
+                      <option [ngValue]="size">{{ size }} px</option>
+                    }
+                  </select>
+                </label>
                 @if (touchUi()) {
                   <button (click)="showMobileKeyboard()" [attr.aria-expanded]="keyboardVisible()">
                     ⌨ {{ t('mobileKeyboard') }}

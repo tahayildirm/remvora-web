@@ -1,3 +1,4 @@
+import { loadView, saveView } from './view-preferences';
 import { SurfaceGestures } from './surface-gestures';
 import { InputMode, TouchPointer, touchLayout } from './touch-pointer';
 import { COUNTRY_CODES, TURKEY_PROVINCES } from './location-data';
@@ -170,8 +171,28 @@ export class App implements OnInit, OnDestroy {
     this.releaseDesktopKeys();
     this.remote.control({ type: 'display.select', monitor_id: Number(this.selectedDisplay) });
   }
-  audioMuted = true;
-  audioVolume = 0.7;
+  private readonly savedView = loadView();
+  terminalFontSize = this.savedView.fontSize;
+  audioMuted = this.savedView.muted;
+  audioVolume = this.savedView.volume;
+  private fitTerminal?: () => void;
+  private saveViewPreferences() {
+    if (
+      !saveView({
+        fontSize: this.terminalFontSize,
+        muted: this.audioMuted,
+        volume: this.audioVolume,
+      })
+    )
+      this.error.set(this.t('viewStorageFailed'));
+  }
+  setTerminalFontSize(value: number) {
+    if (!Number.isInteger(value) || value < 8 || value > 24) return;
+    this.terminalFontSize = value;
+    if (this.terminal) this.terminal.options.fontSize = value;
+    this.fitTerminal?.();
+    this.saveViewPreferences();
+  }
   fileStatus = signal('');
   async uploadFiles(files: FileList | File[] | null) {
     if (!files?.length) return;
@@ -258,7 +279,12 @@ export class App implements OnInit, OnDestroy {
     for (const key of [...keys].reverse()) this.remote.control({ type: 'keyUp', key });
   }
   setAudio() {
-    void this.remote.resumeAudio()?.catch(() => this.error.set(this.t('audioPlayback')));
+    this.saveViewPreferences();
+    this.applyAudio();
+  }
+  private applyAudio() {
+    if (!this.audioMuted)
+      void this.remote.resumeAudio()?.catch(() => this.error.set(this.t('audioPlayback')));
     const video = document.getElementById('desktop-video') as HTMLVideoElement | null;
     if (video) {
       video.muted = this.audioMuted;
@@ -678,7 +704,7 @@ export class App implements OnInit, OnDestroy {
       touchLayout(this.inputMode(), this.inputMedia?.matches ?? false, window.innerWidth),
     );
     this.viewportHeight.set(window.visualViewport?.height ?? window.innerHeight);
-    if (this.terminal) this.terminal.options.fontSize = this.touchUi() ? 16 : 14;
+    if (this.terminal) this.terminal.options.fontSize = this.terminalFontSize;
   };
   pointerPosition(axis: 'x' | 'y') {
     const video = document.getElementById('desktop-video') as HTMLVideoElement | null;
@@ -866,7 +892,7 @@ export class App implements OnInit, OnDestroy {
       this.terminal = new Terminal({
         theme: { background: '#101a27' },
         cursorBlink: true,
-        fontSize: this.touchUi() ? 16 : 14,
+        fontSize: this.terminalFontSize,
         disableStdin: false,
       });
       const fit = new FitAddon();
@@ -874,14 +900,15 @@ export class App implements OnInit, OnDestroy {
       this.terminal.open(host);
       fit.fit();
       this.terminal.onData((data) => this.remote.input(new TextEncoder().encode(data)));
-      this.resizeObserver = new ResizeObserver(() => {
+      this.fitTerminal = () => {
         fit.fit();
         this.remote.control({
           type: 'resize',
           cols: this.terminal?.cols,
           rows: this.terminal?.rows,
         });
-      });
+      };
+      this.resizeObserver = new ResizeObserver(this.fitTerminal);
       this.resizeObserver.observe(host);
     }
     await this.run(() =>
@@ -899,8 +926,7 @@ export class App implements OnInit, OnDestroy {
           const video = document.getElementById('desktop-video') as HTMLVideoElement | null;
           if (video) {
             video.srcObject = stream;
-            video.muted = this.audioMuted;
-            video.volume = this.audioVolume;
+            this.applyAudio();
           }
         },
         this.connectionMode,
@@ -973,10 +999,10 @@ export class App implements OnInit, OnDestroy {
     this.remote.close();
     this.displays = [];
     this.selectedDisplay = '';
-    this.audioMuted = true;
     this.fileStatus.set('');
     this.terminal?.dispose();
     this.terminal = undefined;
+    this.fitTerminal = undefined;
     this.resizeObserver?.disconnect();
     this.modal.set('');
     this.secret.set('');

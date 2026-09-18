@@ -86,3 +86,8 @@ WSS relay her iki hopta TLS kullanır; sunucu içeriğe erişebilir. İşletmeci
 - Eski arayüz: yenileyin veya kapat/açın; hash’li paketi karşılaştırın. Geri dönüş için eski index ve varlıkları koruyun.
 
 Uyumlu sürümü derleyin, mevcut giriş/ayarları yedekleyin, statik dosyaları yayınlayın; giriş ve gerçek oturumu deneyin. API/agent ayrı güncellenir. [Durum](STATUS.md), [yayın kontrolü](PUBLIC_RELEASE.md), SECURITY ve CONTRIBUTING’i okuyun. Seçilmiş Raspberry/macOS akışları test edilmiştir; tam Windows, fiziksel mobil IME, yük/dayanıklılık, bağımsız güvenlik ve imzalı yayın kontrolleri tamamlanmış değildir.
+
+
+### Kaydedilen görüntüleme tercihleri
+
+Terminal araçlarında 8–24 px yazı boyutu seçilebilir (varsayılan 14 px). Değişiklik terminali yeniden sığdırır ve uzak satır/sütun boyutlarını günceller. Yazı boyutu, sessiz/sesli seçimi ve ses seviyesi bu tarayıcının yerel depolamasında saklanır; yeniden bağlantıda ve sayfa yenilendiğinde korunur. Tarayıcılar arasında eşitlenmez; site verileri silinirse sıfırlanır. Tarayıcının otomatik oynatma kuralı sesi başlatmak için bir dokunuş gerektirebilir.
