@@ -152,6 +152,29 @@ describe('remote session lifecycle', () => {
     old.onclose?.();
     expect(current.readyState).toBe(1);
   });
+  it('falls back after three seconds and resets retry delay after a successful session', async () => {
+    const remote = TestBed.inject(Remote);
+    const status = vi.fn();
+    await remote.connect('device', 'Terminal', status, vi.fn(), vi.fn());
+    const socket = FakeSocket.instances[0];
+    await socket.message('session.accept');
+    await vi.advanceTimersByTimeAsync(2999);
+    expect(socket.sent.map((x) => x.type)).not.toContain('relay.start');
+    await vi.advanceTimersByTimeAsync(1);
+    expect(socket.sent.map((x) => x.type)).toContain('relay.start');
+    await socket.message('relay.ready');
+    socket.onclose?.();
+    await vi.advanceTimersByTimeAsync(500);
+    const second = FakeSocket.instances[1];
+    second.onclose?.();
+    await vi.advanceTimersByTimeAsync(1000);
+    const third = FakeSocket.instances[2];
+    await third.message('session.accept');
+    FakePeer.instances[2].channels[0].onopen?.();
+    third.onclose?.();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(FakeSocket.instances).toHaveLength(4);
+  });
   it('keeps the authorized socket usable when agent ICE negotiation fails', async () => {
     const remote = TestBed.inject(Remote);
     const status = vi.fn();
@@ -213,7 +236,7 @@ describe('remote session lifecycle', () => {
     await vi.advanceTimersByTimeAsync(2000);
     const second = FakeSocket.instances[1];
     second.onclose?.();
-    await vi.advanceTimersByTimeAsync(3999);
+    await vi.advanceTimersByTimeAsync(999);
     expect(FakeSocket.instances).toHaveLength(2);
     await vi.advanceTimersByTimeAsync(1);
     const third = FakeSocket.instances[2];

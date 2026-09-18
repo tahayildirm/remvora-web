@@ -76,7 +76,7 @@ const en = {
   blocked: 'Blocked',
   terminalElevationAllowed: 'Allow privilege escalation in authorized terminals',
   terminalPolicyHelp:
-    'Saved for this device. Requires the terminalElevation permission and an updated Linux agent with local opt-in. Linux passwords and sudo rules still apply. Saving disconnects active device sessions. Previously started privileged processes are not undone.',
+    'Saved for this device. Requires the terminalElevation permission and an updated Linux agent with local opt-in. Linux passwords and sudo rules still apply. Saving closes terminal sessions; the device and desktop connection stay online. Previously started privileged processes are not undone.',
   TERMINAL_ELEVATION_UNAVAILABLE:
     'The agent needs updating or local sudo/su permission. Its service must allow privilege escalation.',
   TERMINAL_POLICY_AGENT_UPDATE_REQUIRED: 'Update the agent to use terminal permission controls.',
@@ -334,7 +334,7 @@ const tr: Record<string, string> = {
   blocked: 'Engelli',
   terminalElevationAllowed: 'Yetkili terminallerde yetki yükseltmeye izin ver',
   terminalPolicyHelp:
-    'Bu cihaz için kaydedilir. terminalElevation yetkisi ve yerel izni açılmış güncel Linux agent gerekir. Linux parolası ve sudo kuralları geçerlidir. Kaydetme aktif cihaz oturumlarını keser. Önceden başlatılmış yetkili işlemleri geri almaz.',
+    'Bu cihaz için kaydedilir. terminalElevation yetkisi ve yerel izni açılmış güncel Linux agent gerekir. Linux parolası ve sudo kuralları geçerlidir. Kaydetme terminal oturumlarını kapatır; cihaz ve masaüstü bağlantısı açık kalır. Önceden başlatılmış yetkili işlemleri geri almaz.',
   TERMINAL_ELEVATION_UNAVAILABLE:
     'Agent güncellemesi veya yerel sudo/su izni gerekiyor. Servis yetki yükseltmeye izin vermeli.',
   TERMINAL_POLICY_AGENT_UPDATE_REQUIRED: 'Terminal yetki denetimi için agenti güncelleyin.',

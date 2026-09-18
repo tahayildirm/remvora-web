@@ -169,7 +169,7 @@ export class Remote {
     if (!this.retry || !retryable) return false;
     const retry = this.retry;
     this.disconnect();
-    const delay = Math.min(30000, 2000 * 2 ** Math.min(this.reconnectAttempt++, 4));
+    const delay = Math.min(4000, 500 * 2 ** Math.min(this.reconnectAttempt++, 3));
     this.trace(
       `Connection interrupted (${code}); retry ${this.reconnectAttempt} in ${delay / 1000}s`,
     );
@@ -194,10 +194,14 @@ export class Remote {
     this.diagnostics.set([]);
     this.diagnosticStart = performance.now();
     this.setQuality(quality);
-    this.report = status;
+    const report = (code: string) => {
+      if (code === 'connected' || code === 'connectedRelay') this.reconnectAttempt = 0;
+      status(code);
+    };
+    this.report = report;
     const retry = async () => {
       try {
-        await this.attempt(deviceId, kind, status, data, video, mode, this.quality);
+        await this.attempt(deviceId, kind, report, data, video, mode, this.quality);
       } catch (error) {
         if (this.retry !== retry) return;
         const code =
@@ -484,22 +488,29 @@ export class Remote {
               return;
             }
             this.connectionPhase.set('connectionP2p');
-            await peer.setLocalDescription(await peer.createOffer());
-            if (!trickleIce && peer.iceGatheringState !== 'complete')
-              await new Promise<void>((resolve, reject) => {
-                const deadline = setTimeout(() => reject(new Error('connectionFailed')), 15000);
-                peer.addEventListener('icegatheringstatechange', () => {
-                  if (peer.iceGatheringState === 'complete') {
-                    clearTimeout(deadline);
-                    resolve();
-                  }
+            clearTimeout(this.timer);
+            this.timer = setTimeout(startRelay, 3000);
+            try {
+              await peer.setLocalDescription(await peer.createOffer());
+              if (!trickleIce && peer.iceGatheringState !== 'complete')
+                await new Promise<void>((resolve, reject) => {
+                  const deadline = setTimeout(() => reject(new Error('connectionFailed')), 15000);
+                  peer.addEventListener('icegatheringstatechange', () => {
+                    if (peer.iceGatheringState === 'complete') {
+                      clearTimeout(deadline);
+                      resolve();
+                    }
+                  });
                 });
-              });
-            if (this.socket !== ws || relay) return;
-            this.trace(`Offer sent: ${this.candidateSummary(peer.localDescription?.sdp ?? '')}`);
-            this.send('webrtc.offer', { type: 'offer', sdp: peer.localDescription?.sdp });
-            offerSent = true;
-            for (const candidate of localCandidates.splice(0)) sendCandidate(candidate);
+              if (this.socket !== ws || relay) return;
+              this.trace(`Offer sent: ${this.candidateSummary(peer.localDescription?.sdp ?? '')}`);
+              this.send('webrtc.offer', { type: 'offer', sdp: peer.localDescription?.sdp });
+              offerSent = true;
+              for (const candidate of localCandidates.splice(0)) sendCandidate(candidate);
+            } catch (error) {
+              // A late ICE operation must not tear down an already usable relay.
+              if (!relay) throw error;
+            }
           }
           if (message.type === 'webrtc.answer' && !relay) {
             if (message.payload['error'] === 'ICE_NEGOTIATION_FAILED') {
