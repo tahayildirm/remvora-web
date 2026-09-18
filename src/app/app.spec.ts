@@ -252,6 +252,20 @@ describe('mobile remote tools', () => {
     expect(input.selectionStart).toBe(1);
     input.remove();
   });
+  it('refocuses after Android hides the keyboard without blurring the input', () => {
+    const input = document.createElement('textarea');
+    input.id = 'desktop-keyboard-input';
+    document.body.appendChild(input);
+    input.focus();
+    const blur = vi.spyOn(input, 'blur');
+    const focus = vi.spyOn(input, 'focus');
+    App.prototype.openMobileKeyboard.call({ remoteKind: 'Desktop' } as App);
+    expect(blur).toHaveBeenCalledOnce();
+    expect(focus).toHaveBeenCalledOnce();
+    expect(blur.mock.invocationCallOrder[0]).toBeLessThan(focus.mock.invocationCallOrder[0]);
+    expect(document.activeElement).toBe(input);
+    input.remove();
+  });
   it('streams text and deletions immediately and commits composition only once', () => {
     const input = document.createElement('textarea');
     const mobileKey = vi.fn();

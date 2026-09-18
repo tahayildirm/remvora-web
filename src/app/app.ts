@@ -848,11 +848,12 @@ export class App implements OnInit, OnDestroy {
     }
     const input = document.getElementById('desktop-keyboard-input') as HTMLTextAreaElement | null;
     if (!input) return;
-    if (document.activeElement !== input) {
-      input.value = ' ';
-      input.focus({ preventScroll: true });
-      input.setSelectionRange(1, 1);
-    }
+    // Android can dismiss the IME while keeping this element focused.
+    // A fresh focus transition in the user's gesture is required to reopen it.
+    if (document.activeElement === input) input.blur();
+    input.value = ' ';
+    input.focus({ preventScroll: true });
+    input.setSelectionRange(1, 1);
   }
   directKeyboardInput(event: Event) {
     if ((event as InputEvent).isComposing) return;
