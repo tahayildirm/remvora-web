@@ -195,7 +195,10 @@ export class Remote {
     this.diagnosticStart = performance.now();
     this.setQuality(quality);
     const report = (code: string) => {
-      if (code === 'connected' || code === 'connectedRelay') this.reconnectAttempt = 0;
+      if (code === 'connected' || code === 'connectedRelay') {
+        this.reconnectAttempt = 0;
+        this.trace(`Connection ready: ${code}`);
+      }
       status(code);
     };
     this.report = report;
