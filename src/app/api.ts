@@ -7,6 +7,7 @@ export interface Device {
   operatingSystem: string | null;
   architecture: string | null;
   agentVersion: string | null;
+  allowTerminalPrivilegeEscalation?: boolean;
   enrollmentStatus: string;
   lastSeenAt: string | null;
   deviceCode: string;

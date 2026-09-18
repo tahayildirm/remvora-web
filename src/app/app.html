@@ -307,6 +307,19 @@
                               }}
                             </button>
                           }
+                          @if (
+                            can('devices.terminalPolicy') &&
+                            device.operatingSystem?.toLowerCase() === 'linux'
+                          ) {
+                            <button (click)="openTerminalPolicy(device)">
+                              {{ t('terminalPolicy') }}:
+                              {{
+                                device.allowTerminalPrivilegeEscalation
+                                  ? t('allowed')
+                                  : t('blocked')
+                              }}
+                            </button>
+                          }
                           @if (device.enrollmentStatus === 'Active' && can('devices.reboot')) {
                             <button (click)="beginReboot(device)">{{ t('reboot') }}</button>
                           }
@@ -405,7 +418,7 @@
                   <small>{{ t('organization') }}: {{ row['organizationId'] }}</small>
                   <small
                     >{{ t('twoFactorStatus') }}:
-                    {{ row['twoFactorEnabled'] ? t('enabled') : t('disabled') }}</small
+                    {{ row['twoFactorEnabled'] ? t('allowed') : t('blocked') }}</small
                   >
                   <small
                     >{{ t('failedAttempts') }}: {{ row['failedAttempts'] }} ·
@@ -566,6 +579,20 @@
           </h2>
           <button (click)="close()" [attr.aria-label]="t('close')">✕</button>
         </div>
+        @if (modal() === 'terminalPolicy' && terminalPolicyDevice) {
+          <form (ngSubmit)="saveTerminalPolicy()">
+            <h3>{{ t('terminalPolicy') }} — {{ terminalPolicyDevice.name }}</h3>
+            <label
+              ><input
+                type="checkbox"
+                name="terminalPolicyAllowed"
+                [(ngModel)]="terminalPolicyAllowed"
+              />{{ t('terminalElevationAllowed') }}</label
+            >
+            <p>{{ t('terminalPolicyHelp') }}</p>
+            <button class="primary" [disabled]="busy()">{{ t('save') }}</button>
+          </form>
+        }
         @if (modal() === 'reboot' && rebootDevice) {
           <form (ngSubmit)="requestReboot()">
             <p>

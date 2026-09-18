@@ -557,6 +557,27 @@ export class App implements OnInit, OnDestroy {
       } else await this.load();
     });
   }
+  terminalPolicyDevice: Device | null = null;
+  terminalPolicyAllowed = false;
+  openTerminalPolicy(device: Device) {
+    this.terminalPolicyDevice = device;
+    this.terminalPolicyAllowed = device.allowTerminalPrivilegeEscalation ?? false;
+    this.modal.set('terminalPolicy');
+  }
+  async saveTerminalPolicy() {
+    await this.run(async () => {
+      if (!this.terminalPolicyDevice) return;
+      await this.api.request(
+        'devices/' + this.terminalPolicyDevice.id + '/terminal-policy',
+        'PUT',
+        {
+          allowPrivilegeEscalation: this.terminalPolicyAllowed,
+        },
+      );
+      this.modal.set('');
+      await this.load();
+    });
+  }
   async toggleDevice(device: Device) {
     await this.run(async () => {
       await this.api.request('devices/' + device.id + '/status', 'PATCH', {
