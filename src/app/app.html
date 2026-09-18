@@ -992,6 +992,12 @@
               >
                 @if (touchUi()) {
                   <button (click)="openMobileKeyboard()">⌨ {{ t('mobileKeyboard') }}</button>
+                  <button
+                    (click)="toggleAutoKeyboard()"
+                    [attr.aria-pressed]="autoKeyboardEnabled()"
+                  >
+                    {{ t(autoKeyboardEnabled() ? 'autoKeyboardOn' : 'autoKeyboardOff') }}
+                  </button>
                   <button (click)="toggleDesktopFullscreen()">
                     ⛶ {{ t(desktopFullscreen() ? 'exitFullscreen' : 'fullscreen') }}
                   </button>

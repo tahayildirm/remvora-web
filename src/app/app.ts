@@ -719,6 +719,14 @@ export class App implements OnInit, OnDestroy {
   mobileCtrl = false;
   mobileAlt = false;
   keyboardVisible = signal(false);
+  autoKeyboardEnabled = signal(true);
+  toggleAutoKeyboard() {
+    this.autoKeyboardEnabled.update((enabled) => !enabled);
+    if (!this.autoKeyboardEnabled()) {
+      this.remote.cancelTextFocus();
+      (document.getElementById('desktop-keyboard-input') as HTMLTextAreaElement | null)?.blur();
+    }
+  }
   private readonly inputMedia = window.matchMedia?.('(pointer: coarse)');
   private readonly updateInputLayout = () => {
     this.touchUi.set(
@@ -776,7 +784,7 @@ export class App implements OnInit, OnDestroy {
       const tapped = this.gestures.up(event.pointerId, p, box);
       if (target.hasPointerCapture(event.pointerId)) target.releasePointerCapture(event.pointerId);
       // Open synchronously in the tap gesture; do not wait for remote metadata.
-      if (tapped) this.openMobileKeyboard();
+      if (tapped && this.autoKeyboardEnabled()) this.openMobileKeyboard();
     }
   }
   keyLabel(key: string) {

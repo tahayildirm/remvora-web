@@ -199,7 +199,11 @@ describe('mobile remote tools', () => {
     App.prototype.mobileKey.call(app, 'd');
     expect(new TextDecoder().decode(input.mock.calls[2][0])).toBe('\x1bd');
   });
-  it.each([true, false])('opens the keyboard only for a direct tap (%s)', (tapped) => {
+  it.each([
+    [true, true],
+    [true, false],
+    [false, true],
+  ])('respects automatic keyboard for tap=%s enabled=%s', (tapped, automatic) => {
     const video = document.createElement('video');
     video.id = 'desktop-video';
     Object.defineProperty(video, 'videoWidth', { value: 800 });
@@ -209,6 +213,7 @@ describe('mobile remote tools', () => {
     const up = vi.fn(() => tapped);
     const app = {
       gestures: { up },
+      autoKeyboardEnabled: () => automatic,
       openMobileKeyboard,
       viewZoom: () => 1,
       viewPan: () => ({ x: 0, y: 0 }),
@@ -229,7 +234,7 @@ describe('mobile remote tools', () => {
       'up',
     );
     expect(up).toHaveBeenCalled();
-    expect(openMobileKeyboard).toHaveBeenCalledTimes(tapped ? 1 : 0);
+    expect(openMobileKeyboard).toHaveBeenCalledTimes(tapped && automatic ? 1 : 0);
     video.remove();
   });
   it('focuses the terminal directly from the keyboard button', () => {
