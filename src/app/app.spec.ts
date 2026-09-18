@@ -199,6 +199,17 @@ describe('mobile remote tools', () => {
     App.prototype.mobileKey.call(app, 'd');
     expect(new TextDecoder().decode(input.mock.calls[2][0])).toBe('\x1bd');
   });
+  it('renders the keyboard before focusing synchronously in the user gesture', () => {
+    const input = document.createElement('input');
+    input.id = 'mobile-remote-text';
+    const visible = vi.fn();
+    const render = vi.fn(() => document.body.appendChild(input));
+    const app = { keyboardVisible: { set: visible }, changes: { detectChanges: render } };
+    App.prototype.openMobileKeyboard.call(app as unknown as App);
+    expect(visible).toHaveBeenCalledWith(true);
+    expect(document.activeElement).toBe(input);
+    input.remove();
+  });
   it('defaults to automatic direct touch without enabling a relative cursor', async () => {
     await TestBed.configureTestingModule({ imports: [App] }).compileComponents();
     const fixture = TestBed.createComponent(App);

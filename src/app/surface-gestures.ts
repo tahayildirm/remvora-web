@@ -104,10 +104,10 @@ export class SurfaceGestures {
     }
   }
   up(id: number, p: Point, box: SurfaceBox) {
-    if (!this.points.delete(id)) return;
+    if (!this.points.delete(id)) return false;
     if (this.multiple) {
       if (!this.points.size) this.pinch = undefined;
-      return;
+      return false;
     }
     if (this.relative()) this.pointer.up(id);
     else if (this.dragging) {
@@ -120,8 +120,10 @@ export class SurfaceGestures {
         this.send({ type: 'move', ...at });
         this.send({ type: 'down', button });
         this.send({ type: 'up', button });
+        return button === 0;
       }
     }
+    return false;
   }
   cancel() {
     this.points.clear();

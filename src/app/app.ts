@@ -771,8 +771,9 @@ export class App implements OnInit, OnDestroy {
     }
     if (type === 'move') this.gestures.move(event.pointerId, p, box);
     if (type === 'up') {
-      this.gestures.up(event.pointerId, p, box);
+      const tapped = this.gestures.up(event.pointerId, p, box);
       if (target.hasPointerCapture(event.pointerId)) target.releasePointerCapture(event.pointerId);
+      if (tapped) this.openMobileKeyboard();
     }
   }
   keyLabel(key: string) {
@@ -825,9 +826,15 @@ export class App implements OnInit, OnDestroy {
   showMobileKeyboard() {
     this.cancelTouch();
     this.desktopPanel.set('');
-    this.keyboardVisible.update((v) => !v);
-    if (this.keyboardVisible())
-      setTimeout(() => document.getElementById('mobile-remote-text')?.focus());
+    if (this.keyboardVisible()) this.keyboardVisible.set(false);
+    else this.openMobileKeyboard();
+  }
+  openMobileKeyboard() {
+    this.keyboardVisible.set(true);
+    // Render and focus within the touch/click handler: mobile browsers may
+    // reject software-keyboard activation after an asynchronous callback.
+    this.changes.detectChanges();
+    document.getElementById('mobile-remote-text')?.focus({ preventScroll: true });
   }
   desktopToolsVisible = signal(true);
   desktopPanel = signal('');

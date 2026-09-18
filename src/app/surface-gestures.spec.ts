@@ -30,7 +30,7 @@ describe('direct touch and pinch', () => {
     const { gestures: g, send } = setup();
     g.down(1, { x: 100, y: 150 });
     expect(send).not.toHaveBeenCalled();
-    g.up(1, { x: 100, y: 150 }, box);
+    expect(g.up(1, { x: 100, y: 150 }, box)).toBe(true);
     expect(send.mock.calls.map((c) => c[0])).toEqual([
       { type: 'move', x: 0.25, y: 0.25 },
       { type: 'down', button: 0 },
@@ -45,8 +45,21 @@ describe('direct touch and pinch', () => {
     expect(view().zoom).toBe(2);
     g.up(2, { x: 500, y: 200 }, box);
     g.move(1, { x: 150, y: 200 }, box);
-    g.up(1, { x: 150, y: 200 }, box);
+    expect(g.up(1, { x: 150, y: 200 }, box)).not.toBe(true);
     expect(send.mock.calls.some((c) => c[0].type === 'down')).toBe(false);
+  });
+  it('does not request a keyboard for drags, black bars or long presses', () => {
+    const { gestures: g } = setup();
+    g.down(1, { x: 100, y: 150 });
+    g.move(1, { x: 180, y: 150 }, box);
+    expect(g.up(1, { x: 180, y: 150 }, box)).not.toBe(true);
+    g.down(2, { x: 100, y: 20 });
+    expect(g.up(2, { x: 100, y: 20 }, box)).not.toBe(true);
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1000);
+    g.down(3, { x: 100, y: 150 });
+    now.mockReturnValue(1700);
+    expect(g.up(3, { x: 100, y: 150 }, box)).not.toBe(true);
+    now.mockRestore();
   });
   it('limits zoom and resets translation at minimum zoom', () => {
     const { gestures: g, view } = setup();
