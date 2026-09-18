@@ -826,15 +826,52 @@ export class App implements OnInit, OnDestroy {
   showMobileKeyboard() {
     this.cancelTouch();
     this.desktopPanel.set('');
-    if (this.keyboardVisible()) this.keyboardVisible.set(false);
-    else this.openMobileKeyboard();
+    this.keyboardVisible.update((value) => !value);
+    if (this.keyboardVisible()) {
+      this.changes.detectChanges();
+      document.getElementById('mobile-remote-text')?.focus({ preventScroll: true });
+    }
   }
   openMobileKeyboard() {
-    this.keyboardVisible.set(true);
-    // Render and focus within the touch/click handler: mobile browsers may
-    // reject software-keyboard activation after an asynchronous callback.
-    this.changes.detectChanges();
-    document.getElementById('mobile-remote-text')?.focus({ preventScroll: true });
+    // A desktop tap focuses only the native keyboard sink, never the tools panel.
+    const input = document.getElementById('desktop-keyboard-input') as HTMLTextAreaElement | null;
+    if (!input) return;
+    if (document.activeElement !== input) {
+      input.value = ' ';
+      input.focus({ preventScroll: true });
+      input.setSelectionRange(1, 1);
+    }
+  }
+  directKeyboardInput(event: Event) {
+    if ((event as InputEvent).isComposing) return;
+    const input = event.target as HTMLTextAreaElement;
+    const kind = (event as InputEvent).inputType ?? '';
+    if (kind.startsWith('delete') || input.value === '') this.mobileKey('Backspace');
+    else {
+      const text = input.value.startsWith(' ') ? input.value.slice(1) : input.value;
+      for (const character of text) this.mobileKey(character === '\n' ? 'Enter' : character);
+    }
+    input.value = ' ';
+    input.setSelectionRange(1, 1);
+  }
+  directKeyboardKey(event: KeyboardEvent) {
+    if (event.isComposing || event.key === 'Process') return;
+    if (
+      [
+        'Backspace',
+        'Delete',
+        'Enter',
+        'Tab',
+        'Escape',
+        'ArrowUp',
+        'ArrowDown',
+        'ArrowLeft',
+        'ArrowRight',
+      ].includes(event.key)
+    ) {
+      event.preventDefault();
+      this.mobileKey(event.key);
+    }
   }
   desktopToolsVisible = signal(true);
   desktopPanel = signal('');

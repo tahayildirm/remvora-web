@@ -199,16 +199,43 @@ describe('mobile remote tools', () => {
     App.prototype.mobileKey.call(app, 'd');
     expect(new TextDecoder().decode(input.mock.calls[2][0])).toBe('\x1bd');
   });
-  it('renders the keyboard before focusing synchronously in the user gesture', () => {
-    const input = document.createElement('input');
-    input.id = 'mobile-remote-text';
+  it('focuses the native keyboard without opening a tools panel', () => {
+    const input = document.createElement('textarea');
+    input.id = 'desktop-keyboard-input';
+    document.body.appendChild(input);
     const visible = vi.fn();
-    const render = vi.fn(() => document.body.appendChild(input));
-    const app = { keyboardVisible: { set: visible }, changes: { detectChanges: render } };
+    const app = { keyboardVisible: { set: visible } };
     App.prototype.openMobileKeyboard.call(app as unknown as App);
-    expect(visible).toHaveBeenCalledWith(true);
     expect(document.activeElement).toBe(input);
+    expect(visible).not.toHaveBeenCalled();
+    expect(input.selectionStart).toBe(1);
     input.remove();
+  });
+  it('streams text and deletions immediately and commits composition only once', () => {
+    const input = document.createElement('textarea');
+    const mobileKey = vi.fn();
+    const app = { mobileKey } as unknown as App;
+    const dispatch = (inputType: string, isComposing = false) =>
+      App.prototype.directKeyboardInput.call(app, {
+        target: input,
+        inputType,
+        isComposing,
+      } as unknown as Event);
+    input.value = ' a';
+    dispatch('insertText');
+    expect(mobileKey).toHaveBeenLastCalledWith('a');
+    input.value = ' ş';
+    dispatch('insertCompositionText', true);
+    expect(mobileKey).toHaveBeenCalledTimes(1);
+    dispatch('insertCompositionText');
+    dispatch('insertText');
+    expect(mobileKey.mock.calls.map((call) => call[0])).toEqual(['a', 'ş']);
+    input.value = '';
+    dispatch('deleteContentBackward');
+    expect(mobileKey).toHaveBeenLastCalledWith('Backspace');
+    input.value = ' \n';
+    dispatch('insertLineBreak');
+    expect(mobileKey).toHaveBeenLastCalledWith('Enter');
   });
   it('defaults to automatic direct touch without enabling a relative cursor', async () => {
     await TestBed.configureTestingModule({ imports: [App] }).compileComponents();

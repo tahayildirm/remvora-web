@@ -906,6 +906,18 @@
                 (contextmenu)="$event.preventDefault()"
               ></video>
               @if (touchUi()) {
+                <textarea
+                  id="desktop-keyboard-input"
+                  class="desktop-keyboard-input"
+                  [attr.aria-label]="t('mobileKeyboard')"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  autocorrect="off"
+                  spellcheck="false"
+                  (input)="directKeyboardInput($event)"
+                  (compositionend)="directKeyboardInput($event)"
+                  (keydown)="directKeyboardKey($event)"
+                ></textarea>
                 <div
                   class="touch-surface"
                   role="application"
