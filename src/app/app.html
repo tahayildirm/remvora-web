@@ -1,0 +1,1242 @@
+<div class="app-shell">
+  @if (!me()) {
+    <main class="login">
+      <section class="intro">
+        <div class="brand">
+          <img
+            src="branding/remvora-logo.png"
+            alt="Remvora — Uzakta yakın kontrol"
+            width="1983"
+            height="793"
+          />
+        </div>
+        <div>
+          <span class="eyebrow">REMOTE DEVICE MANAGEMENT</span>
+          <h1>{{ t('welcome') }}</h1>
+          <p>{{ t('welcomeHint') }}</p>
+        </div>
+        <span class="intro-footer">Self-hosted. Open source. In your control.</span>
+      </section>
+      <section class="login-form">
+        <button class="language" (click)="i18n.setLanguage(i18n.lang() === 'en' ? 'tr' : 'en')">
+          {{ i18n.lang() === 'en' ? 'Türkçe' : 'English' }}
+        </button>
+        <form (ngSubmit)="login()">
+          <h2>{{ t('signIn') }}</h2>
+          <label
+            >{{ t('email')
+            }}<input
+              name="email"
+              type="email"
+              [(ngModel)]="email"
+              required
+              autocomplete="username" /></label
+          ><label
+            >{{ t('password')
+            }}<input
+              name="password"
+              type="password"
+              [(ngModel)]="password"
+              required
+              autocomplete="current-password" /></label
+          ><label
+            >{{ t('code') }}<input name="code" [(ngModel)]="code" autocomplete="one-time-code"
+          /></label>
+          @if (error()) {
+            <p class="error" role="alert">{{ error() }}</p>
+          }
+          <button class="primary full" [disabled]="busy()">{{ t('signIn') }} →</button>
+        </form>
+      </section>
+    </main>
+  } @else {
+    <aside>
+      <div class="brand">
+        <img
+          src="branding/remvora-logo.png"
+          alt="Remvora — Uzakta yakın kontrol"
+          width="1983"
+          height="793"
+        />
+      </div>
+      <div class="workspace">
+        <span class="avatar">R</span>
+        <div>
+          Remvora<small>{{ t('workspace') }}</small>
+        </div>
+      </div>
+      <p class="nav-label">{{ t('workspace') }}</p>
+      <nav>
+        @for (item of navigation(); track item) {
+          <button [class.selected]="section() === item" (click)="navigate(item)">
+            <span class="nav-icon">{{
+              item === 'devices' ? '▣' : item === 'security' ? '◇' : item === 'audit' ? '◷' : '▦'
+            }}</span
+            >{{ t(item) }}
+            @if (item === 'devices') {
+              <span class="count">{{ devices().length }}</span>
+            }
+          </button>
+        }
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="connection-dot"></div>
+        Self-hosted control plane<small>Remvora · 0.1.0</small>
+      </div>
+    </aside>
+    <div class="main">
+      <header>
+        <span
+          >Workspace <span class="slash">/</span> <strong>{{ t(section()) }}</strong></span
+        >
+        <div class="header-actions">
+          <button (click)="i18n.setLanguage(i18n.lang() === 'en' ? 'tr' : 'en')">
+            {{ i18n.lang().toUpperCase() }}</button
+          ><button (click)="openProfile()">{{ t('profile') }} / {{ t('organization') }}</button
+          ><button (click)="logout()">{{ t('signOut') }}</button><span class="avatar small">R</span>
+        </div>
+      </header>
+      <main class="content">
+        @if (profileOpen()) {
+          <section class="profile-card">
+            <h2>{{ t('profile') }}</h2>
+            <p>{{ organizationName }} · {{ profileRole }}</p>
+            <form (ngSubmit)="saveProfile()">
+              <label
+                >{{ t('email')
+                }}<input
+                  name="profileEmail"
+                  type="email"
+                  [(ngModel)]="profileEmail"
+                  required
+                  maxlength="254"
+                  autocomplete="username"
+              /></label>
+              <label
+                >{{ t('currentPassword')
+                }}<input
+                  name="currentPassword"
+                  type="password"
+                  [(ngModel)]="currentPassword"
+                  required
+                  maxlength="256"
+                  autocomplete="current-password"
+              /></label>
+              <label
+                >{{ t('newPassword')
+                }}<input
+                  name="newPassword"
+                  type="password"
+                  [(ngModel)]="newPassword"
+                  minlength="8"
+                  maxlength="256"
+                  autocomplete="new-password"
+              /></label>
+              <label
+                >{{ t('confirmPassword')
+                }}<input
+                  name="confirmPassword"
+                  type="password"
+                  [(ngModel)]="confirmPassword"
+                  minlength="8"
+                  maxlength="256"
+                  autocomplete="new-password"
+              /></label>
+              <small>{{ t('passwordHint') }}</small>
+              <div class="actions">
+                <button class="primary" [disabled]="busy()">{{ t('saveProfile') }}</button
+                ><button type="button" (click)="closeProfile()">{{ t('cancel') }}</button>
+              </div>
+            </form>
+            <h3>{{ t('organization') }}</h3>
+            <p>{{ t('organizationHint') }}</p>
+            <button (click)="findOrganizations()" [disabled]="busy() || !currentPassword">
+              {{ t('listOrganizations') }}
+            </button>
+            @if (organizations().length) {
+              <label
+                >{{ t('organization')
+                }}<select [(ngModel)]="selectedOrganization">
+                  @for (org of organizations(); track org.id) {
+                    <option [value]="org.id">{{ org.name }}</option>
+                  }
+                </select></label
+              >
+              <label
+                >{{ t('code') }}<input [(ngModel)]="organizationCode" autocomplete="one-time-code"
+              /></label>
+              <button
+                (click)="switchOrganization()"
+                [disabled]="
+                  busy() || !selectedOrganization || selectedOrganization === me()?.organizationId
+                "
+              >
+                {{ t('switchOrganization') }}
+              </button>
+            }
+          </section>
+        }
+        @if (notice()) {
+          <p role="status">{{ notice() }}</p>
+        }
+
+        @if (error()) {
+          <div class="error" role="alert">{{ error() }}</div>
+        }
+        <div class="page-heading">
+          <div>
+            <span class="eyebrow">REMVORA / {{ t('workspace') }}</span>
+            <h1>{{ section() === 'devices' ? t('fleet') : t(section()) }}</h1>
+            <p>{{ section() === 'devices' ? t('fleetHint') : '' }}</p>
+          </div>
+          <div class="actions">
+            <button (click)="run(load.bind(this))" [disabled]="busy()">↻ {{ t('refresh') }}</button>
+            @if (section() === 'devices' && can('devices.create')) {
+              <button
+                class="primary"
+                (click)="editId = ''; deviceName = ''; description = ''; modal.set('create')"
+              >
+                + {{ t('add') }}
+              </button>
+            }
+            @if (['groups', 'tags', 'contacts', 'locations'].includes(section())) {
+              <button class="primary" (click)="newCatalog()">+ {{ t('save') }}</button>
+            }
+          </div>
+        </div>
+        @if (section() === 'devices') {
+          <section class="stats">
+            <article>
+              <span>{{ t('all') }}</span
+              ><strong>{{ devices().length }}</strong
+              ><span class="stat-icon">▣</span>
+            </article>
+            <article>
+              <span>{{ t('active') }}</span
+              ><strong>{{ active() }}</strong
+              ><span class="stat-icon green">↗</span>
+            </article>
+            <article>
+              <span>{{ t('pending') }}</span
+              ><strong>{{ pending() }}</strong
+              ><span class="stat-icon amber">◷</span>
+            </article>
+          </section>
+          <section class="panel">
+            <div class="panel-toolbar">
+              <h2>
+                {{ t('devices') }} <span class="pill">{{ devices().length }}</span>
+              </h2>
+              <label
+                >{{ t('connectionMode') }}
+                <select [(ngModel)]="connectionMode">
+                  <option value="auto">{{ t('connectionAuto') }}</option>
+                  <option value="relay">{{ t('connectionRelay') }}</option>
+                </select>
+              </label>
+              <input
+                class="search"
+                [placeholder]="t('search')"
+                [ngModel]="search()"
+                (ngModelChange)="search.set($event)"
+              />
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{{ t('name') }}</th>
+                    <th>{{ t('platform') }}</th>
+                    <th>{{ t('status') }}</th>
+                    <th>{{ t('lastSeen') }}</th>
+                    <th>{{ t('actions') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (device of filtered(); track device.id) {
+                    <tr>
+                      <td>
+                        <div class="device-name">
+                          <span class="device-icon">▣</span>
+                          <div>
+                            <strong>{{ device.name }}</strong
+                            ><small>{{
+                              device.description || device.deviceCode.slice(0, 12)
+                            }}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        {{ device.operatingSystem || '—' }}<small>{{ device.architecture }}</small>
+                      </td>
+                      <td>
+                        <span
+                          class="badge"
+                          [class.green]="presence()[device.id]?.online === true"
+                          [class.amber]="device.enrollmentStatus === 'PendingActivation'"
+                          >● {{ t(connectionLabel(device)) }}</span
+                        >
+                        <small
+                          >{{ t('enrollmentState') }}:
+                          {{ t('state' + device.enrollmentStatus) }}</small
+                        >
+                      </td>
+                      <td>
+                        {{
+                          presence()[device.id]?.lastSignalAt || device.lastSeenAt
+                            ? (presence()[device.id]?.lastSignalAt || device.lastSeenAt
+                              | date: 'medium')
+                            : '—'
+                        }}
+                      </td>
+                      <td>
+                        <div class="row-actions">
+                          @if (can('devices.edit')) {
+                            <button (click)="edit(device)">{{ t('edit') }}</button>
+                            @if (me()?.deviceGroups == null) {
+                              <button (click)="assignments(device)">{{ t('organize') }}</button>
+                            }
+                          }
+                          @if (
+                            can('devices.edit') &&
+                            ['Active', 'Disabled'].includes(device.enrollmentStatus)
+                          ) {
+                            <button (click)="toggleDevice(device)">
+                              {{
+                                device.enrollmentStatus === 'Disabled' ? t('enable') : t('disable')
+                              }}
+                            </button>
+                          }
+                          @if (device.enrollmentStatus === 'Active' && can('devices.reboot')) {
+                            <button (click)="beginReboot(device)">{{ t('reboot') }}</button>
+                          }
+                          @if (device.enrollmentStatus === 'Active') {
+                            @if (can('devices.terminal')) {
+                              <button (click)="openRemote(device, 'Terminal')">
+                                ⌘ {{ t('terminal') }}
+                              </button>
+                            }
+                            @if (can('devices.remoteDesktop')) {
+                              <button (click)="openRemote(device, 'Desktop')">
+                                {{ t('desktop') }}
+                              </button>
+                            }
+                          }
+                          @if (device.enrollmentStatus === 'Created' && can('enrollment.manage')) {
+                            <button (click)="enroll(device)">{{ t('enroll') }}</button>
+                          }
+                          @if (
+                            device.enrollmentStatus === 'PendingActivation' &&
+                            can('enrollment.manage')
+                          ) {
+                            <button (click)="approve(device)">{{ t('approve') }}</button>
+                          }
+                          @if (device.enrollmentStatus !== 'Revoked' && can('devices.delete')) {
+                            <button class="danger-text" (click)="revoke(device)">
+                              {{ t('revoke') }}
+                            </button>
+                          }
+                          @if (can('devices.delete')) {
+                            <button
+                              class="danger-text"
+                              [disabled]="busy()"
+                              (click)="deletePermanently(device)"
+                            >
+                              {{ t('deletePermanently') }}
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="5">
+                        <div class="empty">
+                          <span>▣</span>
+                          <h3>{{ t('empty') }}</h3>
+                          <p>{{ t('emptyHint') }}</p>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        } @else if (section() === 'users') {
+          <form class="panel key-form" (ngSubmit)="createUser()">
+            <label
+              >{{ t('email')
+              }}<input name="userEmail" type="email" [(ngModel)]="userEmail" required /></label
+            ><label
+              >{{ t('password')
+              }}<input
+                name="userPassword"
+                type="password"
+                [(ngModel)]="userPassword"
+                minlength="8"
+                autocomplete="new-password"
+                required /></label
+            ><label
+              >{{ t('role')
+              }}<select name="userRole" [(ngModel)]="userRole">
+                @for (role of roleNames; track role) {
+                  <option>{{ role }}</option>
+                }
+              </select></label
+            ><button class="primary">{{ t('addUser') }}</button>
+          </form>
+          <section class="panel catalog-list">
+            @for (row of rows(); track row['id']) {
+              <article>
+                <strong>{{ row['email'] }}</strong
+                ><select
+                  [ngModel]="row['role']"
+                  (ngModelChange)="changeRole(row, $event)"
+                  style="max-width: 180px"
+                  [attr.aria-label]="t('role')"
+                >
+                  @for (role of roleNames; track role) {
+                    <option>{{ role }}</option>
+                  }
+                </select>
+                <div class="user-details">
+                  <small>ID: {{ row['id'] }}</small>
+                  <small>{{ t('organization') }}: {{ row['organizationId'] }}</small>
+                  <small
+                    >{{ t('twoFactorStatus') }}:
+                    {{ row['twoFactorEnabled'] ? t('enabled') : t('disabled') }}</small
+                  >
+                  <small
+                    >{{ t('failedAttempts') }}: {{ row['failedAttempts'] }} ·
+                    {{ t('activeSessions') }}: {{ row['activeSessions'] }}</small
+                  >
+                  <small>{{ t('lockedUntil') }}: {{ row['lockedUntil'] || '—' }}</small>
+                  <small
+                    >{{ t('deviceScope') }}: {{ row['deviceGroupScope'] || t('allDevices') }}</small
+                  >
+                </div>
+                @if (me()?.role === 'Owner') {
+                  <button (click)="manageUser(row)">{{ t('manageUser') }}</button>
+                }
+                @if (row['role'] !== 'Owner') {
+                  <button (click)="editScope(row)">{{ t('deviceScope') }}</button>
+                }
+              </article>
+            }
+          </section>
+          <form class="panel key-form" (ngSubmit)="createRole()">
+            <label>{{ t('role') }}<input name="roleName" [(ngModel)]="roleName" required /></label
+            ><label
+              >{{ t('permissions')
+              }}<select name="rolePermissions" multiple [(ngModel)]="rolePermissions">
+                @for (permission of availablePermissions; track permission) {
+                  <option>{{ permission }}</option>
+                }
+              </select></label
+            ><button class="primary">{{ t('addRole') }}</button>
+          </form>
+        } @else if (section() === 'security') {
+          <section class="panel settings">
+            <h2>{{ t('sessions') }}</h2>
+            @for (session of sessions(); track session.id) {
+              <div class="record">
+                <span
+                  >{{ session.current ? t('currentSession') : session.id }} ·
+                  {{ session.expiresAt | date: 'short' }}</span
+                >
+                <button (click)="revokeSession(session.id, session.current)">
+                  {{ t('revoke') }}
+                </button>
+              </div>
+            }
+            <h2>{{ t('setupTotp') }}</h2>
+            <button class="primary" (click)="setupTotp()">{{ t('setupTotp') }}</button>
+            @if (totpSecret()) {
+              <p class="secret">{{ totpSecret() }}</p>
+              <form (ngSubmit)="confirmTotp()">
+                <label
+                  >{{ t('code')
+                  }}<input
+                    name="code"
+                    [(ngModel)]="code"
+                    autocomplete="one-time-code"
+                    required /></label
+                ><button class="primary">{{ t('confirm') }}</button>
+              </form>
+            }
+            @if (recovery().length) {
+              <p>{{ t('recovery') }}</p>
+              <pre>{{
+                recovery().join(
+                  '
+'
+                )
+              }}</pre>
+            }
+          </section>
+        } @else {
+          @if (section() === 'keys') {
+            <form class="panel key-form" (ngSubmit)="createKey()">
+              <label>{{ t('name') }}<input name="keyName" [(ngModel)]="keyName" required /></label
+              ><label
+                >Scopes<select name="scopes" multiple [(ngModel)]="keyScopes">
+                  <option>devices.read</option>
+                  <option>devices.create</option>
+                  <option>devices.update</option>
+                  <option>devices.delete</option>
+                </select></label
+              ><button class="primary">+ {{ t('keys') }}</button>
+            </form>
+          }
+          <section class="panel catalog-list">
+            @for (row of rows(); track row['id']) {
+              <article>
+                <div>
+                  <strong>{{
+                    row['name'] || row['displayName'] || row['city'] || row['eventType']
+                  }}</strong
+                  ><small>{{
+                    row['email'] || row['addressLine'] || row['timestamp'] || row['expiresAt']
+                  }}</small>
+                </div>
+                @if (!['audit', 'keys'].includes(section())) {
+                  <button (click)="editCatalog(row)">{{ t('edit') }}</button>
+                }
+                @if (section() !== 'audit') {
+                  <button class="danger-text" (click)="deleteRow(row)">{{ t('revoke') }}</button>
+                }
+              </article>
+            } @empty {
+              <div class="empty">
+                <h3>{{ t('empty') }}</h3>
+              </div>
+            }
+          </section>
+        }
+        @if (
+          ['devices', 'groups', 'tags', 'contacts', 'locations', 'audit', 'keys', 'users'].includes(
+            section()
+          )
+        ) {
+          <nav aria-label="Pagination">
+            <button (click)="changePage(-1)" [disabled]="busy() || page() === 0">
+              {{ t('previous') }}
+            </button>
+            <span>{{ page() + 1 }}</span>
+            <button
+              (click)="changePage(1)"
+              [disabled]="
+                busy() || (section() === 'devices' ? devices().length : rows().length) < pageSize
+              "
+            >
+              {{ t('next') }}
+            </button>
+          </nav>
+        }
+        @if (notice()) {
+          <p role="status">{{ notice() }}</p>
+        }
+        <footer>Remvora <span>Secure access starts with verified identity.</span></footer>
+      </main>
+    </div>
+  }
+  @if (modal()) {
+    <div class="modal-backdrop">
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-label="Remvora"
+        class="modal"
+        [class.wide]="modal() === 'remote'"
+        [class.touch-session]="modal() === 'remote' && touchUi()"
+        [class.terminal-modal]="modal() === 'remote' && remoteKind === 'Terminal'"
+        [class.compact-session]="viewportHeight() < 550"
+        [style.--session-height]="viewportHeight() + 'px'"
+        [class.desktop-modal]="modal() === 'remote' && remoteKind === 'Desktop'"
+      >
+        <div
+          class="modal-heading"
+          [hidden]="modal() === 'remote' && (remoteKind === 'Desktop' || touchUi())"
+        >
+          <h2>
+            {{
+              modal() === 'remote' ? selectedName : modal() === 'create' ? t('add') : t(section())
+            }}
+          </h2>
+          <button (click)="close()" [attr.aria-label]="t('close')">✕</button>
+        </div>
+        @if (modal() === 'reboot' && rebootDevice) {
+          <form (ngSubmit)="requestReboot()">
+            <p>
+              {{ t('rebootConfirm') }} <code>{{ rebootDevice.deviceCode }}</code>
+            </p>
+            <label
+              >{{ t('deviceCode')
+              }}<input
+                name="rebootConfirmation"
+                [(ngModel)]="rebootConfirmation"
+                required
+                autocomplete="off"
+            /></label>
+            <button class="primary" [disabled]="rebootConfirmation !== rebootDevice.deviceCode">
+              {{ t('reboot') }}
+            </button>
+          </form>
+        }
+        @if (modal() === 'scope') {
+          <form (ngSubmit)="saveScope()">
+            <label
+              ><input type="checkbox" name="restricted" [(ngModel)]="scopeRestricted" />{{
+                t('restrictGroups')
+              }}</label
+            >
+            @if (scopeRestricted) {
+              <label
+                >{{ t('groups')
+                }}<select name="scopeGroups" multiple [(ngModel)]="scopeSelected">
+                  @for (group of scopeGroups; track group.id) {
+                    <option [value]="group.id">{{ group.name }}</option>
+                  }
+                </select></label
+              >
+              <p>{{ t('emptyScope') }}</p>
+            }
+            <button class="primary">{{ t('save') }}</button>
+          </form>
+        }
+        @if (modal() === 'create') {
+          <form (ngSubmit)="create()">
+            <label
+              >{{ t('name')
+              }}<input name="deviceName" [(ngModel)]="deviceName" maxlength="128" required /></label
+            ><label
+              >{{ t('description')
+              }}<textarea
+                name="description"
+                [(ngModel)]="description"
+                maxlength="2000"
+              ></textarea></label
+            ><button class="primary" [disabled]="busy()">{{ t('save') }}</button>
+          </form>
+        }
+        @if (modal() === 'assignments') {
+          <form (ngSubmit)="saveAssignments()">
+            <label
+              >{{ t('locations')
+              }}<select name="location" [(ngModel)]="assignment.locationId">
+                <option [ngValue]="null">—</option>
+                @for (item of catalogs['locations']; track item['id']) {
+                  <option [ngValue]="item['id']">
+                    {{ item['city'] }} · {{ item['addressLine'] }}
+                  </option>
+                }
+              </select></label
+            ><label
+              >{{ t('groups')
+              }}<select name="groups" multiple [(ngModel)]="assignment.groups">
+                @for (item of catalogs['groups']; track item['id']) {
+                  <option [ngValue]="item['id']">{{ item['name'] }}</option>
+                }
+              </select></label
+            ><label
+              >{{ t('tags')
+              }}<select name="tags" multiple [(ngModel)]="assignment.tags">
+                @for (item of catalogs['tags']; track item['id']) {
+                  <option [ngValue]="item['id']">{{ item['name'] }}</option>
+                }
+              </select></label
+            ><label
+              >{{ t('contacts')
+              }}<select name="contacts" multiple [(ngModel)]="assignment.contacts">
+                @for (item of catalogs['contacts']; track item['id']) {
+                  <option [ngValue]="item['id']">{{ item['displayName'] }}</option>
+                }
+              </select></label
+            ><button class="primary">{{ t('save') }}</button>
+          </form>
+        }
+        @if (modal() === 'secret') {
+          <p>{{ t('token') }}</p>
+          <pre class="secret">{{ secret() }}</pre>
+        }
+        @if (modal() === 'manageUser') {
+          <form (ngSubmit)="saveManagedUser()">
+            <label
+              >{{ t('email')
+              }}<input name="managedEmail" type="email" [(ngModel)]="managedUserEmail" required
+            /></label>
+            <label
+              >{{ t('newPassword')
+              }}<input
+                name="managedPassword"
+                type="password"
+                [(ngModel)]="managedUserPassword"
+                minlength="8"
+                autocomplete="new-password"
+            /></label>
+            <p>{{ t('userPasswordHint') }}</p>
+            <label
+              ><input type="checkbox" name="unlockUser" [(ngModel)]="managedUserUnlock" />{{
+                t('unlockUser')
+              }}</label
+            >
+            <label
+              ><input type="checkbox" name="revokeUserSessions" [(ngModel)]="managedUserRevoke" />{{
+                t('revokeUserSessions')
+              }}</label
+            >
+            <button class="primary" [disabled]="busy()">{{ t('save') }}</button>
+          </form>
+        }
+        @if (modal() === 'catalog') {
+          <form (ngSubmit)="saveCatalog()">
+            @if (section() === 'locations') {
+              <label
+                >{{ t('countryName')
+                }}<select
+                  name="country"
+                  [ngModel]="catalog['countryCode']"
+                  (ngModelChange)="selectCountry($event)"
+                  required
+                >
+                  <option value="">{{ t('selectOption') }}</option>
+                  @for (country of countries(); track country.code) {
+                    <option [value]="country.code">{{ country.name }}</option>
+                  }
+                </select></label
+              >
+              @if (catalog['countryCode'] === 'TR') {
+                <label
+                  >{{ t('province')
+                  }}<select
+                    name="province"
+                    [ngModel]="catalog['province']"
+                    (ngModelChange)="selectProvince($event)"
+                    required
+                  >
+                    <option value="">{{ t('selectOption') }}</option>
+                    @for (province of provinces; track province.name) {
+                      <option [value]="province.name">{{ province.name }}</option>
+                    }
+                  </select></label
+                >
+                <label
+                  >{{ t('district')
+                  }}<select
+                    name="district"
+                    [(ngModel)]="catalog['district']"
+                    [disabled]="!catalog['province']"
+                    required
+                  >
+                    <option value="">{{ t('selectOption') }}</option>
+                    @for (district of districts(); track district) {
+                      <option [value]="district">{{ district }}</option>
+                    }
+                  </select></label
+                >
+              } @else {
+                <p>{{ t('internationalLocationHint') }}</p>
+                <label
+                  >{{ t('province') }}<input name="province" [(ngModel)]="catalog['province']"
+                /></label>
+                <label
+                  >{{ t('district') }}<input name="district" [(ngModel)]="catalog['district']"
+                /></label>
+              }
+              <label>{{ t('city') }}<input name="city" [(ngModel)]="catalog['city']" /></label>
+              <label
+                >{{ t('postalCode')
+                }}<input
+                  name="postalCode"
+                  [(ngModel)]="catalog['postalCode']"
+                  autocomplete="postal-code"
+              /></label>
+              <label
+                >{{ t('addressLine')
+                }}<input
+                  name="addressLine"
+                  [(ngModel)]="catalog['addressLine']"
+                  autocomplete="street-address"
+              /></label>
+              <small>{{ t('locationDataSource') }}: TurkiyeAPI</small>
+            } @else {
+              @for (field of fields(); track field) {
+                <label
+                  >{{ t(field)
+                  }}<input [name]="field" [(ngModel)]="catalog[field]" maxlength="2000"
+                /></label>
+              }
+            }
+            <button class="primary" [disabled]="busy()">{{ t('save') }}</button>
+          </form>
+        }
+        @if (modal() === 'remote') {
+          @if (remoteKind === 'Terminal') {
+            <div
+              id="terminal-stage"
+              class="terminal-stage"
+              [class.tools-open]="desktopToolsVisible()"
+              [class.keyboard-open]="keyboardVisible()"
+              (document:fullscreenchange)="syncFullscreen()"
+            >
+              <div class="terminal-status" role="status" aria-live="polite">
+                <strong>{{ selectedName }}</strong
+                ><span>{{ t(remote.connectionPhase()) }}</span>
+                @if (remote.connecting()) {
+                  <progress [attr.aria-label]="t(remote.connectionPhase())"></progress>
+                }
+              </div>
+              <div id="terminal"></div>
+              <div class="terminal-actions">
+                <button
+                  (click)="toggleDesktopTools()"
+                  [attr.aria-expanded]="desktopToolsVisible()"
+                  aria-controls="terminal-tools"
+                >
+                  ☰ {{ t(desktopToolsVisible() ? 'hideTools' : 'showTools') }}
+                </button>
+              </div>
+              <div id="terminal-tools" class="terminal-tools" [hidden]="!desktopToolsVisible()">
+                @if (touchUi()) {
+                  <button (click)="showMobileKeyboard()" [attr.aria-expanded]="keyboardVisible()">
+                    ⌨ {{ t('mobileKeyboard') }}
+                  </button>
+                }
+                <button (click)="toggleDesktopFullscreen()">
+                  ⛶ {{ t(desktopFullscreen() ? 'exitFullscreen' : 'fullscreen') }}
+                </button>
+                <button (click)="close()">✕ {{ t('close') }}</button>
+                <details>
+                  <summary>{{ t('desktopControls') }}</summary>
+                  <ng-container *ngTemplateOutlet="inputToolbar"></ng-container>
+                </details>
+                <details class="connection-diagnostics">
+                  <summary>{{ t('connectionDiagnostics') }}</summary>
+                  <pre>{{ remote.diagnostics().join('\n') }}</pre>
+                </details>
+              </div>
+              @if (touchUi() && keyboardVisible()) {
+                <div class="terminal-keyboard">
+                  <button (click)="showMobileKeyboard()" [attr.aria-label]="t('closeTools')">
+                    ✕</button
+                  ><ng-container *ngTemplateOutlet="mobileKeyboard"></ng-container>
+                </div>
+              }
+              @if (remoteStatus() && remoteStatus() !== error()) {
+                <p class="session-status" role="status">{{ remoteStatus() }}</p>
+              }
+              @if (error()) {
+                <p class="error" role="alert">{{ error() }}</p>
+              }
+            </div>
+          } @else {
+            <div
+              id="desktop-stage"
+              class="desktop-stage"
+              (document:fullscreenchange)="syncFullscreen()"
+            >
+              <video
+                [style.transform]="
+                  touchUi()
+                    ? 'translate(' +
+                      viewPan().x +
+                      'px,' +
+                      viewPan().y +
+                      'px) scale(' +
+                      viewZoom() +
+                      ')'
+                    : ''
+                "
+                id="desktop-video"
+                autoplay
+                playsinline
+                tabindex="0"
+                (pointermove)="desktopPointer($event, 'move')"
+                (pointerdown)="desktopPointer($event, 'down')"
+                (pointerup)="desktopPointer($event, 'up')"
+                (paste)="desktopPaste($event)"
+                (dragover)="$event.preventDefault()"
+                (drop)="desktopDrop($event)"
+                (blur)="releaseDesktopKeys()"
+                (pointercancel)="cancelTouch()"
+                (lostpointercapture)="!touchUi() && releaseDesktopKeys()"
+                (window:blur)="cancelTouch()"
+                (keydown)="desktopKey($event, 'keyDown')"
+                (keyup)="desktopKey($event, 'keyUp')"
+                (wheel)="desktopScroll($event)"
+                (contextmenu)="$event.preventDefault()"
+              ></video>
+              @if (touchUi()) {
+                <div
+                  class="touch-surface"
+                  role="application"
+                  [attr.aria-label]="t('inputTouch')"
+                  (pointerdown)="touchPointer($event, 'down')"
+                  (pointermove)="touchPointer($event, 'move')"
+                  (pointerup)="touchPointer($event, 'up')"
+                  (pointercancel)="cancelTouch()"
+                  (contextmenu)="$event.preventDefault()"
+                ></div>
+                <div
+                  class="touch-pointer"
+                  [hidden]="inputMode() !== 'touchpad'"
+                  [style.left.px]="pointerPosition('x')"
+                  [style.top.px]="pointerPosition('y')"
+                >
+                  ＋
+                </div>
+              }
+              @if (touchUi() && keyboardVisible()) {
+                <div class="touch-keyboard-panel">
+                  <button (click)="showMobileKeyboard()" [attr.aria-label]="t('closeTools')">
+                    ✕
+                  </button>
+                  <ng-container *ngTemplateOutlet="mobileKeyboard"></ng-container>
+                </div>
+              }
+              <header class="desktop-top" [hidden]="touchUi() || !desktopToolsVisible()">
+                <div>
+                  <span class="desktop-eyebrow">REMVORA / {{ t('remoteWorkspace') }}</span>
+                  <h2>{{ selectedName }}</h2>
+                </div>
+                <span class="desktop-connection" role="status">{{
+                  t(remote.connectionPhase())
+                }}</span>
+              </header>
+              @if (remote.connecting()) {
+                <div class="desktop-loading" role="status">
+                  <span class="loading-orbit"></span
+                  ><strong>{{ t(remote.connectionPhase()) }}</strong
+                  ><progress [attr.aria-label]="t(remote.connectionPhase())"></progress>
+                </div>
+              }
+              <div class="desktop-actions">
+                <button
+                  (click)="toggleDesktopTools()"
+                  [attr.aria-expanded]="desktopToolsVisible()"
+                  aria-controls="desktop-dock"
+                  [attr.aria-label]="t(desktopToolsVisible() ? 'hideTools' : 'showTools')"
+                >
+                  ☰ <span>{{ t(desktopToolsVisible() ? 'hideTools' : 'showTools') }}</span>
+                </button>
+                <button
+                  [hidden]="touchUi()"
+                  (click)="toggleDesktopFullscreen()"
+                  [attr.aria-label]="t(desktopFullscreen() ? 'exitFullscreen' : 'fullscreen')"
+                >
+                  ⛶ <span>{{ t(desktopFullscreen() ? 'exitFullscreen' : 'fullscreen') }}</span>
+                </button>
+                <button
+                  [hidden]="touchUi()"
+                  class="desktop-close"
+                  (click)="close()"
+                  [attr.aria-label]="t('close')"
+                >
+                  ✕
+                </button>
+              </div>
+              <nav
+                id="desktop-dock"
+                class="desktop-dock"
+                [hidden]="!desktopToolsVisible()"
+                [attr.aria-label]="t('desktopTools')"
+              >
+                @if (touchUi()) {
+                  <button (click)="showMobileKeyboard()" [attr.aria-expanded]="keyboardVisible()">
+                    ⌨ {{ t('mobileKeyboard') }}
+                  </button>
+                  <button (click)="toggleDesktopFullscreen()">
+                    ⛶ {{ t(desktopFullscreen() ? 'exitFullscreen' : 'fullscreen') }}
+                  </button>
+                }
+                @for (tool of desktopToolTabs; track tool.key) {
+                  <button
+                    [class.active]="desktopPanel() === tool.key"
+                    (click)="selectDesktopPanel(tool.key)"
+                    [attr.aria-expanded]="desktopPanel() === tool.key"
+                    aria-controls="desktop-panel"
+                  >
+                    <span aria-hidden="true">{{ tool.icon }}</span
+                    >{{ t(tool.label) }}
+                  </button>
+                }
+                @if (touchUi()) {
+                  <button (click)="close()">✕ {{ t('close') }}</button>
+                }
+              </nav>
+              <section
+                id="desktop-panel"
+                class="desktop-panel"
+                [hidden]="!desktopToolsVisible() || !desktopPanel()"
+                [attr.aria-label]="t('desktopTools')"
+              >
+                <div class="desktop-panel-heading">
+                  <strong>{{ t(desktopPanelTitle()) }}</strong
+                  ><button (click)="desktopPanel.set('')" [attr.aria-label]="t('closeTools')">
+                    ✕
+                  </button>
+                </div>
+                <div [hidden]="desktopPanel() !== 'quality'">
+                  <fieldset class="remote-tools">
+                    <legend>{{ t('videoQuality') }}</legend>
+                    <label
+                      >{{ t('qualityMode') }}
+                      <select [(ngModel)]="videoQuality.mode" (change)="saveVideoQuality()">
+                        <option value="auto">{{ t('qualityAuto') }}</option>
+                        <option value="manual">{{ t('qualityManual') }}</option>
+                      </select>
+                    </label>
+                    <label
+                      >FPS
+                      <select
+                        [(ngModel)]="videoQuality.fps"
+                        (change)="saveVideoQuality()"
+                        [disabled]="videoQuality.mode === 'auto'"
+                      >
+                        @for (fps of [3, 5, 10, 15, 20, 30]; track fps) {
+                          <option [ngValue]="fps">{{ fps }}</option>
+                        }
+                      </select>
+                    </label>
+                    <label
+                      >{{ t('targetBitrate') }}
+                      <select
+                        [(ngModel)]="videoQuality.bitrate"
+                        (change)="saveVideoQuality()"
+                        [disabled]="videoQuality.mode === 'auto'"
+                      >
+                        @for (
+                          rate of [150000, 300000, 600000, 1200000, 2500000, 5000000, 8000000];
+                          track rate
+                        ) {
+                          <option [ngValue]="rate">{{ rate / 1000 }} kbps</option>
+                        }
+                      </select>
+                    </label>
+                    <label
+                      >{{ t('maxWidth') }}
+                      <select
+                        [(ngModel)]="videoQuality.width"
+                        (change)="saveVideoQuality()"
+                        [disabled]="videoQuality.mode === 'auto'"
+                      >
+                        @for (width of [640, 800, 960, 1280, 1600, 1920]; track width) {
+                          <option [ngValue]="width">{{ width }} px</option>
+                        }
+                      </select>
+                    </label>
+                    <small>{{ t('qualitySaved') }}</small>
+                    @if (remote.qualitySupported()) {
+                      <p>
+                        {{ t('qualityTarget') }}: {{ remote.qualityApplied().fps }} FPS ·
+                        {{ remote.qualityApplied().bitrate / 1000 }} kbps ·
+                        {{ remote.qualityApplied().width }} px
+                      </p>
+                      <p>
+                        {{ t('qualityMeasured') }}: {{ remote.videoMetrics().fps }} FPS ·
+                        {{ remote.videoMetrics().bitrate }} kbps ·
+                        {{ remote.videoMetrics().rtt }} ms
+                      </p>
+                    } @else {
+                      <p>{{ t('qualityUnavailable') }}</p>
+                    }
+                  </fieldset>
+                </div>
+                <div [hidden]="desktopPanel() !== 'controls'">
+                  <ng-container *ngTemplateOutlet="inputToolbar"></ng-container>
+                  @if (touchUi()) {
+                    <p>{{ t('pinchHint') }}</p>
+                    @if (inputMode() === 'touchpad') {
+                      <div class="touch-buttons">
+                        <button (click)="touch.click(0)">{{ t('leftClick') }}</button
+                        ><button (click)="touch.click(2)">{{ t('rightClick') }}</button
+                        ><button (click)="touch.hold()" [attr.aria-pressed]="touch.held">
+                          {{ t('holdMouse') }}
+                        </button>
+                      </div>
+                    }
+                  }
+
+                  <label
+                    >{{ t('clipboardText')
+                    }}<textarea [(ngModel)]="clipboardText" maxlength="16384"></textarea>
+                  </label>
+                  <button (click)="requestClipboard()">{{ t('readClipboard') }}</button>
+                  <button (click)="sendClipboard()">{{ t('sendClipboard') }}</button>
+                  <div class="remote-tools">
+                    <button (click)="listDisplays()">{{ t('displays') }}</button>
+                    @if (displays.length) {
+                      <select
+                        [attr.aria-label]="t('displays')"
+                        [(ngModel)]="selectedDisplay"
+                        (change)="selectDisplay()"
+                      >
+                        <option value="" disabled>{{ t('displays') }}</option>
+                        @for (display of displays; track display.id) {
+                          <option [value]="display.id">{{ display.name }}</option>
+                        }
+                      </select>
+                    }
+
+                    <button (click)="pasteLocalClipboard()">{{ t('pasteLocal') }}</button>
+                    <button (click)="copyRemoteClipboard()">{{ t('copyRemote') }}</button>
+                    <button (click)="sendShortcut(['Control', 'v'])">Ctrl+V</button>
+                    <button (click)="sendShortcut(['Meta', 'v'])">Cmd+V</button>
+                    <button (click)="sendShortcut(['Alt', 'Tab'])">Alt+Tab</button>
+                    <button (click)="sendShortcut(['Control', 'a'])">Ctrl+A</button>
+                    <label
+                      ><input
+                        type="checkbox"
+                        [disabled]="!remote.capabilities().audio"
+                        [(ngModel)]="audioMuted"
+                        (change)="setAudio()"
+                      />{{ t('muteAudio') }}</label
+                    >
+                    <label
+                      >{{ t('volume')
+                      }}<input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        [(ngModel)]="audioVolume"
+                        (input)="setAudio()"
+                    /></label>
+                  </div>
+                  @if (!remote.capabilities().audio) {
+                    <p>{{ t('audioDisabled') }}</p>
+                  }
+                  <p>{{ t('pasteHint') }}</p>
+                </div>
+                <div [hidden]="desktopPanel() !== 'files'">
+                  <div class="remote-files">
+                    <label
+                      >{{ t('uploadFiles')
+                      }}<input
+                        #filePicker
+                        type="file"
+                        multiple
+                        [disabled]="remote.files.busy"
+                        (change)="uploadFiles(filePicker.files); filePicker.value = ''"
+                    /></label>
+                    <button (click)="listFiles()" [disabled]="remote.files.busy">
+                      {{ t('sharedFiles') }}
+                    </button>
+                    @if (remote.files.busy) {
+                      <progress max="100" [value]="remote.files.progress"></progress
+                      ><button (click)="cancelFiles()">{{ t('cancelTransfer') }}</button>
+                    }
+                    <span role="status">{{ fileStatus() }}</span>
+                    @for (file of remote.files.entries; track file.name) {
+                      <button [disabled]="remote.files.busy" (click)="downloadFile(file)">
+                        {{ t('download') }}: {{ file.name }} ({{ file.size }} B)
+                      </button>
+                    }
+                  </div>
+                </div>
+                <div [hidden]="desktopPanel() !== 'info'">
+                  <div
+                    class="connection-banner"
+                    role="status"
+                    aria-live="polite"
+                    [attr.aria-busy]="remote.connecting()"
+                  >
+                    <div>
+                      <strong>{{ t(remote.connectionPhase()) }}</strong>
+                      @if (remote.connecting()) {
+                        <progress [attr.aria-label]="t(remote.connectionPhase())"></progress>
+                      }
+                      @if (remote.connectionPhase() === 'connectionP2pReady') {
+                        <small>{{ t('connectionP2pHint') }}</small>
+                      }
+                      @if (remote.connectionPhase() === 'connectionRelayReady') {
+                        <small>{{ t('connectionRelayHint') }}</small>
+                      }
+                    </div>
+                  </div>
+                  <details class="connection-diagnostics">
+                    <summary>{{ t('connectionDiagnostics') }}</summary>
+                    <pre>{{ remote.diagnostics().join('\n') }}</pre>
+                  </details>
+                  @if (remoteStatus() && remoteStatus() !== error()) {
+                    <p class="session-status" role="status">{{ remoteStatus() }}</p>
+                  }
+                </div>
+              </section>
+              @if (remoteStatus() && remoteStatus() !== error()) {
+                <p class="desktop-notice" role="status">{{ remoteStatus() }}</p>
+              }
+              @if (error()) {
+                <p class="desktop-error" role="alert">{{ error() }}</p>
+              }
+            </div>
+          }
+        }
+        @if (error() && modal() !== 'remote') {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+      </section>
+    </div>
+  }
+</div>
+
+<ng-template #inputToolbar>
+  <div class="input-toolbar">
+    <label
+      >{{ t('inputMode') }}
+      <select [ngModel]="inputMode()" (ngModelChange)="setInputMode($event)">
+        <option value="auto">{{ t('inputAuto') }}</option>
+        <option value="touch">{{ t('inputTouch') }}</option>
+        <option value="touchpad">{{ t('inputTouchpad') }}</option>
+        <option value="mouse">{{ t('inputMouse') }}</option>
+      </select>
+    </label>
+    @if (touchUi()) {
+      <small>{{ t(remoteKind === 'Terminal' ? 'terminalTouchHint' : 'touchHint') }}</small>
+    }
+  </div>
+</ng-template>
+<ng-template #mobileKeyboard>
+  @if (touchUi() && keyboardVisible()) {
+    <div class="mobile-keyboard">
+      <div class="touch-buttons">
+        <button (click)="mobileCtrl = !mobileCtrl" [attr.aria-pressed]="mobileCtrl">Ctrl</button>
+        <button (click)="mobileAlt = !mobileAlt" [attr.aria-pressed]="mobileAlt">Alt</button>
+        @for (
+          key of [
+            'Escape',
+            'Tab',
+            'ArrowLeft',
+            'ArrowUp',
+            'ArrowDown',
+            'ArrowRight',
+            'Backspace',
+            'Enter',
+            'c',
+            'd',
+            'z',
+          ];
+          track key
+        ) {
+          <button (click)="mobileKey(key)">{{ keyLabel(key) }}</button>
+        }
+      </div>
+      <div class="mobile-text-entry">
+        <input
+          id="mobile-remote-text"
+          [attr.aria-label]="t('remoteText')"
+          [(ngModel)]="mobileText"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          (keydown.enter)="sendMobileText(); $event.preventDefault()"
+        />
+        <button (click)="sendMobileText()">{{ t('mobileSend') }}</button>
+      </div>
+      @if (remoteKind === 'Desktop') {
+        <small>{{ t('desktopTextHint') }}</small>
+      }
+    </div>
+  }
+</ng-template>

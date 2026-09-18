@@ -1,0 +1,18 @@
+{
+  "id": "/",
+  "name": "Remvora",
+  "short_name": "Remvora",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101c2c",
+  "theme_color": "#101c2c",
+  "icons": [
+    {
+      "src": "branding/remvora-logo.png",
+      "sizes": "1983x793",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
