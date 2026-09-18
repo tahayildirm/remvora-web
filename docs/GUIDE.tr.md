@@ -1,5 +1,6 @@
 # Remvora Web — kullanım ve yayın rehberi
 
+[Veritabanı ve ilk Owner kurulumu](https://github.com/tahayildirm/remvora-server/blob/main/docs/FIRST_INSTALL.tr.md)
 [Türkçe](GUIDE.tr.md) · [English](GUIDE.en.md)
 
 ## Amaç ve bileşenler
@@ -61,7 +62,7 @@ Araçlar dokunmatik görünümde başlangıçta kapalıdır; dikeyde altta, yata
 
 Video ayarlarında otomatik/elle kalite, FPS, bitrate ve boyut sınırları bulunur; cihaz başına tarayıcıda saklanır. Tarayıcı verisi silinirse, başka tarayıcı/cihaz veya özel mod kullanılırsa yerel tercihler kaybolabilir. Düşük bantta kalite düşürmek gerekir; ayar ağ gecikmesini yok etmez.
 
-Klavye kısayollarının bazıları tarayıcı/OS tarafından yakalanır; ekrandaki düğmeleri kullanın. Pano açık eylemli, yalnız metinlidir; agent ve bazen tarayıcı izni ister, arka planda okunmaz. Yapıştırılan/sürüklenen dosya paylaşılan klasöre aktarılır, OS dosya panosuna değil. Sistem sesi isteğe bağlıdır, sessiz başlar ve platforma bağlıdır; mikrofon yakalama modu yoktur.
+Klavye kısayollarının bazıları tarayıcı/OS tarafından yakalanır; ekrandaki düğmeleri kullanın. Pano açık eylemli, yalnız metinlidir; agent ve bazen tarayıcı izni ister, arka planda okunmaz. Yapıştırılan/sürüklenen dosya paylaşılan klasöre aktarılır, OS dosya panosuna değil. Sistem sesi isteğe bağlıdır, ilk kullanımda sessiz başlar, sonraki ses tercihini bu tarayıcıda hatırlar ve platforma bağlıdır; mikrofon yakalama modu yoktur.
 
 ## Mobil terminal
 

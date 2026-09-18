@@ -1,5 +1,6 @@
 # Remvora Web — operator and deployment guide
 
+[Database and first Owner setup](https://github.com/tahayildirm/remvora-server/blob/main/docs/FIRST_INSTALL.en.md)
 [English](GUIDE.en.md) · [Türkçe](GUIDE.tr.md)
 
 ## Purpose and components
@@ -61,7 +62,7 @@ Tools are collapsed by default on touch layouts, at the bottom in portrait and r
 
 Video controls include adaptive/manual quality, FPS, bitrate and size limits, saved for that device in the browser. Clearing browser storage, another browser/device or private browsing can lose local preferences. Low bandwidth requires lower quality; no setting can remove network latency.
 
-Keyboard shortcuts depend on browser/OS reservations. Use on-screen buttons for intercepted combinations. Clipboard is explicit, text-only, requires agent permission and may need browser clipboard permission; no background reading. Pasted/dropped files use the shared-folder transfer, not the OS file clipboard. System audio is optional, starts muted and depends on agent platform support. There is no microphone capture mode.
+Keyboard shortcuts depend on browser/OS reservations. Use on-screen buttons for intercepted combinations. Clipboard is explicit, text-only, requires agent permission and may need browser clipboard permission; no background reading. Pasted/dropped files use the shared-folder transfer, not the OS file clipboard. System audio is optional, starts muted on first use, remembers subsequent audio preferences in this browser, and depends on agent platform support. There is no microphone capture mode.
 
 ## Mobile terminal
 
