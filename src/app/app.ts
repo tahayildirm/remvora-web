@@ -771,9 +771,8 @@ export class App implements OnInit, OnDestroy {
     }
     if (type === 'move') this.gestures.move(event.pointerId, p, box);
     if (type === 'up') {
-      const tapped = this.gestures.up(event.pointerId, p, box);
+      this.gestures.up(event.pointerId, p, box);
       if (target.hasPointerCapture(event.pointerId)) target.releasePointerCapture(event.pointerId);
-      if (tapped) this.openMobileKeyboard();
     }
   }
   keyLabel(key: string) {
@@ -833,7 +832,11 @@ export class App implements OnInit, OnDestroy {
     }
   }
   openMobileKeyboard() {
-    // A desktop tap focuses only the native keyboard sink, never the tools panel.
+    // Explicit keyboard action only; pointing at the remote video never focuses this.
+    if (this.remoteKind === 'Terminal') {
+      this.terminal?.focus();
+      return;
+    }
     const input = document.getElementById('desktop-keyboard-input') as HTMLTextAreaElement | null;
     if (!input) return;
     if (document.activeElement !== input) {

@@ -199,6 +199,41 @@ describe('mobile remote tools', () => {
     App.prototype.mobileKey.call(app, 'd');
     expect(new TextDecoder().decode(input.mock.calls[2][0])).toBe('\x1bd');
   });
+  it('does not open a keyboard when tapping the remote desktop', () => {
+    const video = document.createElement('video');
+    video.id = 'desktop-video';
+    Object.defineProperty(video, 'videoWidth', { value: 800 });
+    Object.defineProperty(video, 'videoHeight', { value: 600 });
+    document.body.appendChild(video);
+    const openMobileKeyboard = vi.fn();
+    const up = vi.fn(() => true);
+    const app = { gestures: { up }, openMobileKeyboard } as unknown as App;
+    App.prototype.touchPointer.call(
+      app,
+      {
+        preventDefault: vi.fn(),
+        clientX: 10,
+        clientY: 10,
+        pointerId: 1,
+        currentTarget: {
+          getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }),
+          hasPointerCapture: () => false,
+        },
+      } as unknown as PointerEvent,
+      'up',
+    );
+    expect(up).toHaveBeenCalled();
+    expect(openMobileKeyboard).not.toHaveBeenCalled();
+    video.remove();
+  });
+  it('focuses the terminal directly from the keyboard button', () => {
+    const focus = vi.fn();
+    App.prototype.openMobileKeyboard.call({
+      remoteKind: 'Terminal',
+      terminal: { focus },
+    } as unknown as App);
+    expect(focus).toHaveBeenCalledOnce();
+  });
   it('focuses the native keyboard without opening a tools panel', () => {
     const input = document.createElement('textarea');
     input.id = 'desktop-keyboard-input';

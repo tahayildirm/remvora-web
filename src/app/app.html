@@ -837,9 +837,7 @@
                   </select>
                 </label>
                 @if (touchUi()) {
-                  <button (click)="showMobileKeyboard()" [attr.aria-expanded]="keyboardVisible()">
-                    ⌨ {{ t('mobileKeyboard') }}
-                  </button>
+                  <button (click)="openMobileKeyboard()">⌨ {{ t('mobileKeyboard') }}</button>
                 }
                 <button (click)="toggleDesktopFullscreen()">
                   ⛶ {{ t(desktopFullscreen() ? 'exitFullscreen' : 'fullscreen') }}
@@ -993,9 +991,7 @@
                 [attr.aria-label]="t('desktopTools')"
               >
                 @if (touchUi()) {
-                  <button (click)="showMobileKeyboard()" [attr.aria-expanded]="keyboardVisible()">
-                    ⌨ {{ t('mobileKeyboard') }}
-                  </button>
+                  <button (click)="openMobileKeyboard()">⌨ {{ t('mobileKeyboard') }}</button>
                   <button (click)="toggleDesktopFullscreen()">
                     ⛶ {{ t(desktopFullscreen() ? 'exitFullscreen' : 'fullscreen') }}
                   </button>
