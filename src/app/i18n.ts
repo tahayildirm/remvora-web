@@ -70,7 +70,7 @@ const en = {
   viewStorageFailed: 'Could not save preferences in this browser.',
   muteAudio: 'Mute system audio',
   volume: 'Volume',
-  audioPlayback: 'Click the audio control to allow playback.',
+  audioDecodeFailed: 'System audio could not be decoded.',
 
   reboot: 'Reboot',
   rebootConfirm: 'This can interrupt work on the device. Type its code to request a reboot:',
@@ -318,7 +318,7 @@ const tr: Record<string, string> = {
   viewStorageFailed: 'Tercihler bu tarayıcıda kaydedilemedi.',
   muteAudio: 'Sistem sesini kapat',
   volume: 'Ses seviyesi',
-  audioPlayback: 'Oynatmaya izin vermek için ses kontrolüne tıklayın.',
+  audioDecodeFailed: 'Sistem sesi çözümlenemedi.',
   reboot: 'Yeniden başlat',
   rebootConfirm: 'Cihazdaki çalışma kesilebilir. Talep için cihaz kodunu yazın:',
   deviceCode: 'Cihaz kodu',

@@ -127,7 +127,7 @@ export class RelayMedia {
           }
         },
         error: () => {
-          if (!this.closed) this.status('audioPlayback');
+          if (!this.closed) this.status('audioDecodeFailed');
         },
       });
       this.audio.configure({ codec: 'opus', sampleRate: 48000, numberOfChannels: 2 });

@@ -283,13 +283,13 @@ export class App implements OnInit, OnDestroy {
     this.applyAudio();
   }
   private applyAudio() {
-    if (!this.audioMuted)
-      void this.remote.resumeAudio()?.catch(() => this.error.set(this.t('audioPlayback')));
+    // Autoplay restrictions are retried by the audio control without a global error banner.
+    if (!this.audioMuted) void this.remote.resumeAudio()?.catch(() => {});
     const video = document.getElementById('desktop-video') as HTMLVideoElement | null;
     if (video) {
       video.muted = this.audioMuted;
       video.volume = this.audioVolume;
-      void video.play().catch(() => this.error.set(this.t('audioPlayback')));
+      void video.play().catch(() => {});
     }
   }
 
